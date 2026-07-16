@@ -14,6 +14,10 @@ apt:
   - ros-noetic-xgc2-gazebo-sim-camera
   packages:
   - ros-noetic-xgc2-gazebo-sim-camera
+  package_architectures:
+    ros-noetic-xgc2-gazebo-sim-camera:
+    - amd64
+    - arm64
   depends:
   - ros-noetic-gazebo-plugins
   - ros-noetic-gazebo-ros
@@ -44,3 +48,9 @@ ownership:
 release:
   requires:
   - xgc2-gazebo-sim-vrpn-bridge
+  repository: lxk36/xgc2-gazebo-sim-camera
+  ref: main
+  workflow: release.yml
+  ci_workflow: ci.yml
+  apt_versions:
+    focal: 0.1.0-1
