@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="start_gazebo" default="true"/>
+  <arg name="world" default="$(find gazebo_sim_camera)/worlds/empty.world"/>
+
+  <arg name="camera_namespace" default="usb_cam"/>
+  <arg name="model_name" default="gazebo_static_camera"/>
+  <arg name="camera_link_frame" default="usb_cam_link"/>
+  <arg name="optical_frame" default="usb_cam_optical_frame"/>
+  <arg name="gt_camera_link_frame" default="usb_cam_link_gt"/>
+  <arg name="gt_optical_frame" default="usb_cam_optical_frame_gt"/>
+  <arg name="parent_frame" default="map"/>
+  <arg name="width" default="1920"/>
+  <arg name="height" default="1080"/>
+  <arg name="fps" default="30.0"/>
+  <arg name="hfov" default="1.3962634"/>
+  <arg name="near_clip" default="0.05"/>
+  <arg name="far_clip" default="100.0"/>
+  <arg name="noise_stddev" default="0.0"/>
+
+  <arg name="x" default="-4.0"/>
+  <arg name="y" default="0.0"/>
+  <arg name="z" default="1.5"/>
+  <arg name="roll" default="0.0"/>
+  <arg name="pitch" default="0.0"/>
+  <arg name="yaw" default="0.0"/>
+
+  <!--
+    truth: owns the official camera TF chain.
+    calibration: owns no camera TF.
+    validation: publishes truth only on the disjoint *_gt chain.
+  -->
+  <arg name="mode" default="truth"/>
+  <arg name="publish_truth_tf" default="true"/>
+
+  <param name="use_sim_time" value="$(arg use_sim_time)"/>
+  <include if="$(arg start_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world)"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+  </include>
+
+  <param name="$(arg model_name)_description"
+         command="$(find xacro)/xacro '$(find gazebo_sim_camera)/urdf/fixed_rgb_camera.urdf.xacro'
+           model_name:=$(arg model_name)
+           camera_namespace:=$(arg camera_namespace)
+           camera_link_frame:=$(arg camera_link_frame)
+           optical_frame:=$(arg optical_frame)
+           width:=$(arg width) height:=$(arg height) fps:=$(arg fps) hfov:=$(arg hfov)
+           near_clip:=$(arg near_clip) far_clip:=$(arg far_clip) noise_stddev:=$(arg noise_stddev)"/>
+
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg model_name)" output="screen"
+        args="-urdf -param $(arg model_name)_description -model $(arg model_name)
+          -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+  <group if="$(eval arg('mode') == 'truth' and arg('publish_truth_tf'))">
+    <node pkg="tf" type="static_transform_publisher" name="$(arg model_name)_truth_pose"
+          args="$(arg x) $(arg y) $(arg z) $(arg yaw) $(arg pitch) $(arg roll)
+            $(arg parent_frame) $(arg camera_link_frame) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="$(arg model_name)_optical_frame"
+          args="0 0 0 -1.5707963267948966 0 -1.5707963267948966
+            $(arg camera_link_frame) $(arg optical_frame) 100"/>
+  </group>
+
+  <group if="$(eval arg('mode') == 'validation' and arg('publish_truth_tf'))">
+    <node pkg="tf" type="static_transform_publisher" name="$(arg model_name)_validation_truth_pose"
+          args="$(arg x) $(arg y) $(arg z) $(arg yaw) $(arg pitch) $(arg roll)
+            $(arg parent_frame) $(arg gt_camera_link_frame) 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="$(arg model_name)_validation_optical_frame"
+          args="0 0 0 -1.5707963267948966 0 -1.5707963267948966
+            $(arg gt_camera_link_frame) $(arg gt_optical_frame) 100"/>
+  </group>
+</launch>

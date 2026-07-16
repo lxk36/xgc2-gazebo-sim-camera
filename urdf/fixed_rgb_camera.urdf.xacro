@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<!--
+  Keep the URDF robot name literal.  xacro resolves substitutions on the root
+  element before it visits child <xacro:arg> declarations, so using
+  $(arg model_name) here makes a direct `xacro fixed_rgb_camera.urdf.xacro`
+  invocation fail.  Gazebo's runtime model identity is supplied independently
+  by spawn_model's -model argument.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="gazebo_static_camera">
+  <xacro:arg name="model_name" default="gazebo_static_camera"/>
+  <xacro:arg name="camera_namespace" default="usb_cam"/>
+  <xacro:arg name="camera_link_frame" default="usb_cam_link"/>
+  <xacro:arg name="optical_frame" default="usb_cam_optical_frame"/>
+  <xacro:arg name="width" default="1920"/>
+  <xacro:arg name="height" default="1080"/>
+  <xacro:arg name="fps" default="30.0"/>
+  <xacro:arg name="hfov" default="1.3962634"/>
+  <xacro:arg name="near_clip" default="0.05"/>
+  <xacro:arg name="far_clip" default="100.0"/>
+  <xacro:arg name="noise_stddev" default="0.0"/>
+
+  <link name="$(arg camera_link_frame)">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.0004" ixy="0" ixz="0" iyy="0.0004" iyz="0" izz="0.0004"/>
+    </inertial>
+    <visual>
+      <geometry><box size="0.12 0.18 0.10"/></geometry>
+      <material name="camera_dark"><color rgba="0.08 0.08 0.08 1"/></material>
+    </visual>
+    <collision><geometry><box size="0.12 0.18 0.10"/></geometry></collision>
+  </link>
+
+  <link name="$(arg optical_frame)"/>
+  <joint name="camera_link_to_optical" type="fixed">
+    <parent link="$(arg camera_link_frame)"/>
+    <child link="$(arg optical_frame)"/>
+    <!-- REP-103: camera link x-forward/z-up to optical z-forward/x-right/y-down. -->
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
+
+  <!-- Model-level static flag: the fixed-site camera must never fall. -->
+  <gazebo><static>true</static></gazebo>
+
+  <gazebo reference="$(arg camera_link_frame)">
+    <sensor name="rgb_camera" type="camera">
+      <always_on>true</always_on>
+      <update_rate>$(arg fps)</update_rate>
+      <visualize>false</visualize>
+      <camera>
+        <horizontal_fov>$(arg hfov)</horizontal_fov>
+        <image>
+          <width>$(arg width)</width>
+          <height>$(arg height)</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip><near>$(arg near_clip)</near><far>$(arg far_clip)</far></clip>
+        <noise><type>gaussian</type><mean>0.0</mean><stddev>$(arg noise_stddev)</stddev></noise>
+      </camera>
+      <plugin name="gazebo_ros_rgb_camera" filename="libgazebo_ros_camera.so">
+        <!--
+          gazebo_ros_camera prefixes its image topics with cameraName inside
+          robotNamespace.  Put the plugin at the ROS root and use cameraName as
+          the single namespace component; otherwise usb_cam is duplicated as
+          /usb_cam/usb_cam/image_raw.
+        -->
+        <robotNamespace>/</robotNamespace>
+        <cameraName>$(arg camera_namespace)</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>$(arg optical_frame)</frameName>
+        <updateRate>$(arg fps)</updateRate>
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>

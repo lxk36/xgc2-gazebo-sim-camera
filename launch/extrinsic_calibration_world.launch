@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="camera_namespace" default="usb_cam"/>
+  <arg name="model_name" default="gazebo_static_camera"/>
+  <arg name="camera_link_frame" default="usb_cam_link"/>
+  <arg name="optical_frame" default="usb_cam_optical_frame"/>
+  <arg name="gt_camera_link_frame" default="usb_cam_link_gt"/>
+  <arg name="gt_optical_frame" default="usb_cam_optical_frame_gt"/>
+  <arg name="width" default="1920"/>
+  <arg name="height" default="1080"/>
+  <arg name="fps" default="30.0"/>
+  <arg name="hfov" default="1.3962634"/>
+  <arg name="camera_x" default="-4.0"/><arg name="camera_y" default="0.0"/><arg name="camera_z" default="1.5"/>
+  <arg name="camera_roll" default="0.0"/><arg name="camera_pitch" default="0.0"/><arg name="camera_yaw" default="0.0"/>
+  <arg name="mode" default="truth"/>
+  <arg name="publish_truth_tf" default="true"/>
+  <arg name="start_vrpn" default="true"/>
+  <arg name="vrpn_port" default="3883"/>
+  <!-- Stamp received poses in the local ROS clock so they share Gazebo /clock
+       with image_raw. VRPN server wall time is intentionally not propagated. -->
+  <arg name="vrpn_use_server_time" default="false"/>
+
+  <include file="$(find gazebo_sim_camera)/launch/static_camera.launch">
+    <arg name="world" value="$(find gazebo_sim_camera)/worlds/calibration.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="camera_namespace" value="$(arg camera_namespace)"/>
+    <arg name="model_name" value="$(arg model_name)"/>
+    <arg name="camera_link_frame" value="$(arg camera_link_frame)"/>
+    <arg name="optical_frame" value="$(arg optical_frame)"/>
+    <arg name="gt_camera_link_frame" value="$(arg gt_camera_link_frame)"/>
+    <arg name="gt_optical_frame" value="$(arg gt_optical_frame)"/>
+    <arg name="width" value="$(arg width)"/><arg name="height" value="$(arg height)"/>
+    <arg name="fps" value="$(arg fps)"/><arg name="hfov" value="$(arg hfov)"/>
+    <arg name="x" value="$(arg camera_x)"/><arg name="y" value="$(arg camera_y)"/><arg name="z" value="$(arg camera_z)"/>
+    <arg name="roll" value="$(arg camera_roll)"/><arg name="pitch" value="$(arg camera_pitch)"/><arg name="yaw" value="$(arg camera_yaw)"/>
+    <arg name="mode" value="$(arg mode)"/>
+    <arg name="publish_truth_tf" value="$(arg publish_truth_tf)"/>
+  </include>
+  <include file="$(find gazebo_sim_camera)/launch/extrinsic_markers.launch"/>
+
+  <group if="$(arg start_vrpn)">
+    <include file="$(find gazebo_sim_vrpn_bridge)/launch/vrpn_server.launch">
+      <arg name="config_file" value="$(find gazebo_sim_camera)/config/extrinsic_markers_vrpn.yaml"/>
+      <arg name="port" value="$(arg vrpn_port)"/>
+    </include>
+    <include file="$(find gazebo_sim_vrpn_bridge)/launch/vrpn_client.launch">
+      <arg name="server" value="127.0.0.1"/><arg name="port" value="$(arg vrpn_port)"/>
+      <arg name="frame_id" value="map"/><arg name="use_server_time" value="$(arg vrpn_use_server_time)"/>
+      <arg name="trackers" value="[cal_marker_01,cal_marker_02,cal_marker_03,cal_marker_04,cal_marker_05,cal_marker_06]"/>
+    </include>
+  </group>
+</launch>

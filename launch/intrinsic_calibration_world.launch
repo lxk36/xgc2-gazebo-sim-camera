@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="gui" default="true"/>
+  <arg name="paused" default="false"/>
+  <arg name="camera_namespace" default="usb_cam"/>
+  <arg name="model_name" default="gazebo_static_camera"/>
+  <arg name="camera_link_frame" default="usb_cam_link"/>
+  <arg name="optical_frame" default="usb_cam_optical_frame"/>
+  <arg name="width" default="1920"/>
+  <arg name="height" default="1080"/>
+  <arg name="fps" default="30.0"/>
+  <arg name="hfov" default="1.3962634"/>
+  <arg name="camera_x" default="-4.0"/><arg name="camera_y" default="0.0"/><arg name="camera_z" default="1.5"/>
+  <arg name="camera_roll" default="0.0"/><arg name="camera_pitch" default="0.0"/><arg name="camera_yaw" default="0.0"/>
+  <arg name="board_x" default="2.0"/><arg name="board_y" default="0.0"/><arg name="board_z" default="1.5"/>
+  <arg name="board_roll" default="0.0"/><arg name="board_pitch" default="0.0"/><arg name="board_yaw" default="0.0"/>
+
+  <include file="$(find gazebo_sim_camera)/launch/static_camera.launch">
+    <arg name="world" value="$(find gazebo_sim_camera)/worlds/calibration.world"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="camera_namespace" value="$(arg camera_namespace)"/>
+    <arg name="model_name" value="$(arg model_name)"/>
+    <arg name="camera_link_frame" value="$(arg camera_link_frame)"/>
+    <arg name="optical_frame" value="$(arg optical_frame)"/>
+    <arg name="width" value="$(arg width)"/><arg name="height" value="$(arg height)"/>
+    <arg name="fps" value="$(arg fps)"/><arg name="hfov" value="$(arg hfov)"/>
+    <arg name="x" value="$(arg camera_x)"/><arg name="y" value="$(arg camera_y)"/><arg name="z" value="$(arg camera_z)"/>
+    <arg name="roll" value="$(arg camera_roll)"/><arg name="pitch" value="$(arg camera_pitch)"/><arg name="yaw" value="$(arg camera_yaw)"/>
+    <arg name="mode" value="truth"/><arg name="publish_truth_tf" value="true"/>
+  </include>
+
+  <param name="intrinsic_checkerboard_description"
+         command="$(find xacro)/xacro '$(find gazebo_sim_camera)/urdf/checkerboard_8x6.urdf.xacro' model_name:=intrinsic_checkerboard"/>
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_intrinsic_checkerboard" output="screen"
+        args="-urdf -param intrinsic_checkerboard_description -model intrinsic_checkerboard
+          -x $(arg board_x) -y $(arg board_y) -z $(arg board_z)
+          -R $(arg board_roll) -P $(arg board_pitch) -Y $(arg board_yaw)"/>
+</launch>

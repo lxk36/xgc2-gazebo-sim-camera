@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!-- The Gazebo model name is assigned by spawn_model; keep direct xacro usable. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="calibration_marker">
+  <xacro:arg name="model_name" default="cal_marker"/>
+  <xacro:arg name="color" default="1 0 0 1"/>
+  <xacro:arg name="gazebo_material" default="Gazebo/Red"/>
+  <xacro:arg name="radius" default="0.14"/>
+  <link name="marker">
+    <inertial><mass value="0.01"/><inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/></inertial>
+    <visual><geometry><sphere radius="$(arg radius)"/></geometry><material name="marker_color"><color rgba="$(arg color)"/></material></visual>
+    <collision><geometry><sphere radius="$(arg radius)"/></geometry></collision>
+  </link>
+  <!-- Gazebo Classic does not reliably preserve URDF RGBA materials during
+       URDF-to-SDF conversion. Use its built-in material scripts explicitly. -->
+  <gazebo reference="marker"><material>$(arg gazebo_material)</material></gazebo>
+  <gazebo><static>true</static></gazebo>
+</robot>

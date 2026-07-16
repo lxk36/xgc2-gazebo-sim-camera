@@ -1,0 +1,106 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Enabled: true
+      Name: Ground Grid
+      Plane: XY
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 01
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_01/pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 02
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_02/pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 03
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_03/pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 04
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_04/pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 05
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_05/pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 0.35
+      Axes Radius: 0.06
+      Class: rviz/Pose
+      Enabled: true
+      Name: Marker 06
+      Queue Size: 10
+      Shape: Axes
+      Topic: /vrpn_client_node/cal_marker_06/pose
+      Unreliable: false
+      Value: true
+    - Class: rviz/Camera
+      Enabled: true
+      Image Rendering: background and overlay
+      Image Topic: /usb_cam/image_raw
+      Name: Camera AR
+      Overlay Alpha: 0.65
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+      Zoom Factor: 1
+  Enabled: true
+  Global Options:
+    Background Color: 30; 32; 36
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+Window Geometry:
+  Height: 900
+  Width: 1440

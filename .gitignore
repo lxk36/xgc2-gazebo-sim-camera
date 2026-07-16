@@ -1,0 +1,9 @@
+/build/
+/devel/
+/install/
+/install-root/
+/.work/
+/.ci/
+/debs/
+*.pyc
+__pycache__/

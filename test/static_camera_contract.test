@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find gazebo_sim_camera)/launch/static_camera.launch">
+    <arg name="gui" value="false"/>
+    <arg name="width" value="320"/>
+    <arg name="height" value="240"/>
+    <arg name="fps" value="10.0"/>
+    <arg name="hfov" value="1.0471975512"/>
+    <arg name="far_clip" value="20.0"/>
+    <arg name="mode" value="truth"/>
+    <arg name="publish_truth_tf" value="true"/>
+  </include>
+  <test test-name="static_camera_contract" pkg="gazebo_sim_camera" type="camera_contract_test.py" time-limit="90">
+    <param name="image_topic" value="/usb_cam/image_raw"/>
+    <param name="camera_info_topic" value="/usb_cam/camera_info"/>
+    <param name="frame_id" value="usb_cam_optical_frame"/>
+    <param name="parent_frame" value="map"/>
+    <param name="width" value="320"/><param name="height" value="240"/>
+    <param name="hfov" value="1.0471975512"/>
+  </test>
+</launch>

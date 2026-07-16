@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!-- The Gazebo model name is assigned by spawn_model; keep direct xacro usable. -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="intrinsic_checkerboard">
+  <xacro:arg name="model_name" default="intrinsic_checkerboard"/>
+  <xacro:property name="s" value="0.20"/>
+  <xacro:macro name="black_square" params="column row">
+    <visual>
+      <origin xyz="-0.011 ${(-0.7 + 0.2*column)} ${(-0.5 + 0.2*row)}"/>
+      <geometry><box size="0.004 ${s} ${s}"/></geometry>
+      <material name="black"><color rgba="0.01 0.01 0.01 1"/></material>
+    </visual>
+  </xacro:macro>
+
+  <!-- Eight by six squares, i.e. seven by five internal calibration corners. -->
+  <link name="board">
+    <inertial><mass value="1.0"/><inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/></inertial>
+    <visual>
+      <geometry><box size="0.02 1.60 1.20"/></geometry>
+      <material name="white"><color rgba="0.98 0.98 0.98 1"/></material>
+    </visual>
+    <collision><geometry><box size="0.02 1.60 1.20"/></geometry></collision>
+    <xacro:black_square column="0" row="0"/><xacro:black_square column="2" row="0"/><xacro:black_square column="4" row="0"/><xacro:black_square column="6" row="0"/>
+    <xacro:black_square column="1" row="1"/><xacro:black_square column="3" row="1"/><xacro:black_square column="5" row="1"/><xacro:black_square column="7" row="1"/>
+    <xacro:black_square column="0" row="2"/><xacro:black_square column="2" row="2"/><xacro:black_square column="4" row="2"/><xacro:black_square column="6" row="2"/>
+    <xacro:black_square column="1" row="3"/><xacro:black_square column="3" row="3"/><xacro:black_square column="5" row="3"/><xacro:black_square column="7" row="3"/>
+    <xacro:black_square column="0" row="4"/><xacro:black_square column="2" row="4"/><xacro:black_square column="4" row="4"/><xacro:black_square column="6" row="4"/>
+    <xacro:black_square column="1" row="5"/><xacro:black_square column="3" row="5"/><xacro:black_square column="5" row="5"/><xacro:black_square column="7" row="5"/>
+  </link>
+  <gazebo><static>true</static></gazebo>
+</robot>
