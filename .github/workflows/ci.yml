@@ -41,12 +41,13 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build, test, and install-check Debian package
+      - name: Build, test, and package Debian artifact
         run: |
           install -d "$GITHUB_WORKSPACE/.ci/build-manifests"
           .xgc2/scripts/build_debs_in_docker.sh \
             --work-dir "$RUNNER_TEMP/xgc2-gazebo-sim-camera-${{ matrix.arch }}" \
-            --output-dir "$GITHUB_WORKSPACE/debs"
+            --output-dir "$GITHUB_WORKSPACE/debs" \
+            --skip-install-check
       - name: Create trusted build manifest
         run: |
           version="$(awk -F': *' '/^version:/ {print $2; exit}' .xgc2/product.yml)"

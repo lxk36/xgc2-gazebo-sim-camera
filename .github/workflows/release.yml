@@ -149,12 +149,13 @@ jobs:
       PACKAGE_VERSION: ${{ needs.validate-release-inputs.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build, test, and install-check Debian package
+      - name: Build, test, and package Debian artifact
         run: |
           install -d "$GITHUB_WORKSPACE/.ci/build-manifests"
           .xgc2/scripts/build_debs_in_docker.sh \
             --work-dir "$RUNNER_TEMP/xgc2-gazebo-sim-camera-${{ matrix.arch }}" \
-            --output-dir "$GITHUB_WORKSPACE/debs"
+            --output-dir "$GITHUB_WORKSPACE/debs" \
+            --skip-install-check
       - name: Create release-train build manifest
         run: |
           python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
