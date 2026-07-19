@@ -32,7 +32,7 @@ apt:
   - ros-noetic-sensor-msgs
   - ros-noetic-tf
   - ros-noetic-xacro
-  - ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)
+  - ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)
   - ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)
 usage:
   install: 'sudo apt update
