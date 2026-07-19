@@ -40,6 +40,7 @@ docker run --rm \
       ros-noetic-gazebo-plugins ros-noetic-gazebo-ros ros-noetic-rostest \
       ros-noetic-rospack ros-noetic-rospy ros-noetic-roslaunch ros-noetic-rostopic ros-noetic-rviz \
       ros-noetic-sensor-msgs ros-noetic-tf ros-noetic-xacro \
+      ros-noetic-xgc2-gazebo-sim-worlds \
       ros-noetic-xgc2-gazebo-sim-vrpn-bridge
     rm -rf /workspace/work/src /workspace/work/build /workspace/work/devel /workspace/work/install-root
     mkdir -p /workspace/work/src/gazebo-camera
