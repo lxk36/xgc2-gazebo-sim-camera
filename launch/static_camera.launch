@@ -5,7 +5,7 @@
   <arg name="keyboard_gui" default="false"/>
   <arg name="use_sim_time" default="true"/>
   <arg name="start_gazebo" default="true"/>
-  <arg name="world" default="$(dirname)/../worlds/empty.world"/>
+  <arg name="world" default="$(find gazebo_sim_worlds)/worlds/empty/empty.world"/>
 
   <arg name="camera_namespace" default="usb_cam"/>
   <arg name="model_name" default="gazebo_static_camera"/>

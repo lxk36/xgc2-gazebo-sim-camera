@@ -22,7 +22,7 @@
   <arg name="board_roll" default="0.0"/><arg name="board_pitch" default="0.0"/><arg name="board_yaw" default="0.0"/>
 
   <include file="$(dirname)/static_camera.launch">
-    <arg name="world" value="$(dirname)/../worlds/calibration.world"/>
+    <arg name="world" value="$(find gazebo_sim_worlds)/worlds/camera_calibration_intrinsic/camera_calibration_intrinsic.world"/>
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
     <arg name="keyboard_gui" value="$(arg keyboard_teleop)"/>
@@ -38,12 +38,8 @@
     <arg name="mode" value="truth"/><arg name="publish_truth_tf" value="true"/>
   </include>
 
-  <param name="intrinsic_checkerboard_description"
-         command="$(find xacro)/xacro '$(dirname)/../urdf/checkerboard_8x6.urdf.xacro' model_name:=intrinsic_checkerboard"/>
-  <node pkg="gazebo_ros" type="spawn_model" name="spawn_intrinsic_checkerboard" output="screen"
-        args="-urdf -param intrinsic_checkerboard_description -model intrinsic_checkerboard
-          -x $(arg board_x) -y $(arg board_y) -z $(arg board_z)
-          -R $(arg board_roll) -P $(arg board_pitch) -Y $(arg board_yaw)"/>
+  <!-- The checkerboard (model://checkerboard_8x6) is composed into the shared
+       camera_calibration_intrinsic world; no separate spawn is needed. -->
 
   <node if="$(arg keyboard_teleop)" pkg="gazebo_sim_camera"
         type="keyboard_camera_teleop.py" name="gazebo_camera_keyboard_teleop"

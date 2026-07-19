@@ -48,11 +48,13 @@ against a non-conflicting truth tree.
 roslaunch gazebo_sim_camera intrinsic_calibration_world.launch gui:=true
 ```
 
-The target has 8 by 6 squares (7 by 5 inner corners), each `0.20 m`. Camera and
-board poses are launch arguments. Gazebo's ideal pinhole camera publishes the
-ground-truth `CameraInfo`; run the normal ROS camera calibrator on the same two
-topics to exercise an intrinsic-calibration workflow. Move the board to several
-poses with `/gazebo/set_model_state` to collect geometrically diverse samples.
+The target is the shared `model://checkerboard_8x6` asset (8 by 6 squares / 7 by
+5 inner corners, `0.20 m`), composed into the `camera_calibration_intrinsic`
+world in the `gazebo_sim_worlds` package — this launch only spawns and drives the
+camera. Gazebo's ideal pinhole camera publishes the ground-truth `CameraInfo`;
+run the normal ROS camera calibrator on the same two topics to exercise an
+intrinsic-calibration workflow. Move the *camera* to several poses with
+`/gazebo/set_model_state` to collect geometrically diverse samples.
 
 The calibration world spawns the camera in movable mode (`static:=false`) and
 repositions it by publishing `gazebo_msgs/ModelState` on the
@@ -136,9 +138,11 @@ roslaunch gazebo_sim_camera extrinsic_calibration_world.launch \
   mode:=calibration publish_truth_tf:=false
 ```
 
-Six independent, colored, non-coplanar models named `cal_marker_01` through
-`cal_marker_06` are spawned. `config/extrinsic_markers_vrpn.yaml` maps them to
-the same VRPN tracker names through the existing `gazebo_sim_vrpn_bridge`.
+Six independent, colored, non-coplanar markers named `cal_marker_01` through
+`cal_marker_06` (the shared `model://cal_marker_*` assets) are composed into the
+`camera_calibration_extrinsic` world in `gazebo_sim_worlds`.
+`config/extrinsic_markers_vrpn.yaml` maps them to the same VRPN tracker names
+through the existing `gazebo_sim_vrpn_bridge`.
 The resulting poses are `/vrpn_client_node/cal_marker_XX/pose` in `map`.
 This package does not copy or fork the VRPN bridge algorithm.
 The client defaults to `vrpn_use_server_time:=false`, so pose headers use the

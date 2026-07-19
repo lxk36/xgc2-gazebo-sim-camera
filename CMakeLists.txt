@@ -23,12 +23,12 @@ catkin_install_python(PROGRAMS
 install(DIRECTORY
   config
   launch
+  models
   process-definitions
   rviz
   test
   urdf
   web
-  worlds
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )

@@ -21,8 +21,11 @@
   <exec_depend>rostopic</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>gazebo_sim_vrpn_bridge</exec_depend>
+  <exec_depend>gazebo_sim_worlds</exec_depend>
   <test_depend>rostest</test_depend>
   <test_depend>python3-nose</test_depend>
 
-  <export/>
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+  </export>
 </package>

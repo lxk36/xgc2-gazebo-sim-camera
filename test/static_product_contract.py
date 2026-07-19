@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import re
 from pathlib import Path
 
 
@@ -8,9 +7,6 @@ root = Path(__file__).resolve().parents[1]
 xacro = (root / "urdf/fixed_rgb_camera.urdf.xacro").read_text(encoding="utf-8")
 launch = (root / "launch/static_camera.launch").read_text(encoding="utf-8")
 extrinsic = (root / "launch/extrinsic_calibration_world.launch").read_text(encoding="utf-8")
-markers = (root / "launch/extrinsic_markers.launch").read_text(encoding="utf-8")
-checkerboard = (root / "urdf/checkerboard_8x6.urdf.xacro").read_text(encoding="utf-8")
-world = (root / "worlds/calibration.world").read_text(encoding="utf-8")
 rviz = (root / "rviz/camera_ar.rviz").read_text(encoding="utf-8")
 definition = json.loads(
     (root / "process-definitions/gazebo-static-camera.json").read_text(encoding="utf-8")
@@ -45,38 +41,18 @@ assert "arg('mode') == 'calibration'" not in launch  # calibration deliberately 
 
 assert '<arg name="vrpn_use_server_time" default="false"/>' in extrinsic
 assert '<arg name="use_server_time" value="$(arg vrpn_use_server_time)"/>' in extrinsic
-for material in ("Red", "Green", "Blue", "Yellow", "Purple", "Turquoise"):
-    assert "Gazebo/" + material in markers
 for marker in range(1, 7):
     assert f"/vrpn_client_node/cal_marker_{marker:02d}/pose" in rviz
 assert "Image Topic: /usb_cam/image_raw" in rviz
-assert checkerboard.count("<xacro:black_square") == 24
-assert "<material>Gazebo/White</material>" in checkerboard
-assert "<material>Gazebo/Black</material>" in checkerboard
-assert "<preserveFixedJoint>true</preserveFixedJoint>" in checkerboard
 assert "--gui-client-plugin libKeyboardGUIPlugin.so" in launch
 assert 'type="keyboard_camera_teleop.py"' in (
     root / "launch/intrinsic_calibration_world.launch"
 ).read_text(encoding="utf-8")
 
-positions = [
-    tuple(map(float, values))
-    for values in re.findall(
-        r'name="spawn_cal_marker_\d+" args="[^"]* -x ([\d.-]+) -y ([\d.-]+) -z ([\d.-]+)"',
-        markers,
-    )
-]
-assert len(positions) == 6
-a, b, c, d = positions[:4]
-u = tuple(b[i] - a[i] for i in range(3))
-v = tuple(c[i] - a[i] for i in range(3))
-w = tuple(d[i] - a[i] for i in range(3))
-volume6 = (
-    u[0] * (v[1] * w[2] - v[2] * w[1])
-    - u[1] * (v[0] * w[2] - v[2] * w[0])
-    + u[2] * (v[0] * w[1] - v[1] * w[0])
-)
-assert abs(volume6) > 1.0e-6  # at least four targets are not coplanar
+# The calibration checkerboard and markers are now shared model:// assets in the
+# gazebo_sim_worlds package (models/checkerboard_8x6, models/cal_marker_*, and the
+# camera_calibration_{intrinsic,extrinsic} worlds); they are validated by that
+# package's own compliance, not here.
 
 mode_values = definition["parameters"]["properties"]["mode"]["enum"]
 assert mode_values == ["truth", "calibration", "validation"]

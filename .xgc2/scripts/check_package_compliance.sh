@@ -18,8 +18,8 @@ required=(
   launch/static_camera.launch launch/intrinsic_calibration_world.launch
   launch/extrinsic_calibration_world.launch launch/camera_ar_rviz.launch
   launch/web_calibration.launch web/index.html web/app.js web/style.css
-  urdf/fixed_rgb_camera.urdf.xacro urdf/checkerboard_8x6.urdf.xacro
-  urdf/calibration_marker.urdf.xacro config/extrinsic_markers_vrpn.yaml
+  urdf/fixed_rgb_camera.urdf.xacro config/extrinsic_markers_vrpn.yaml
+  models/usb_cam/model.config models/usb_cam/model.sdf
   process-definitions/gazebo-static-camera.json test/static_camera_contract.test
   test/static_product_contract.py
 )
@@ -33,12 +33,10 @@ grep -q 'id": "gazebo-static-camera"' process-definitions/gazebo-static-camera.j
 grep -q '/usr/share/xgc2/process-definitions' CMakeLists.txt
 grep -q 'PLUGIN_RELATIVE="usr/share/xgc2/process-definitions/gazebo-static-camera.json"' .xgc2/scripts/package_debs.sh
 
-for xml in launch/*.launch test/*.test worlds/*.world; do xmllint --noout "${xml}"; done
+for xml in launch/*.launch test/*.test models/usb_cam/model.sdf models/usb_cam/model.config; do xmllint --noout "${xml}"; done
 # Direct expansion exercises every declared default.  This specifically guards
 # against root-element substitutions that are evaluated before <xacro:arg>.
 /opt/ros/noetic/bin/xacro urdf/fixed_rgb_camera.urdf.xacro >/dev/null
-/opt/ros/noetic/bin/xacro urdf/checkerboard_8x6.urdf.xacro >/dev/null
-/opt/ros/noetic/bin/xacro urdf/calibration_marker.urdf.xacro >/dev/null
 
 # Also verify that launch-time mappings remain accepted.
 /opt/ros/noetic/bin/xacro urdf/fixed_rgb_camera.urdf.xacro model_name:=test_camera camera_namespace:=usb_cam camera_link_frame:=usb_cam_link optical_frame:=usb_cam_optical_frame width:=320 height:=240 fps:=10 hfov:=1.0 near_clip:=0.05 far_clip:=20 noise_stddev:=0 >/dev/null
