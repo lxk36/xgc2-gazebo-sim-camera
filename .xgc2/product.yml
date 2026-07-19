@@ -1,9 +1,10 @@
 schema: xgc2.product.v1
 id: xgc2-gazebo-sim-camera
 name: XGC2 Gazebo Sim Camera
-version: 0.1.0-1
+version: 0.1.0-2
 kind: ros1-apt
-summary: Independent fixed-site RGB camera, calibration targets, and RViz AR scene for Gazebo Classic 11.
+summary: Independent fixed-site RGB camera, calibration targets, and RViz AR scene
+  for Gazebo Classic 11.
 ros:
   distro: noetic
   packages:
@@ -33,16 +34,24 @@ apt:
   - ros-noetic-xacro
   - ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)
 usage:
-  install: |
-    sudo apt update
+  install: 'sudo apt update
+
     sudo apt install ros-noetic-xgc2-gazebo-sim-camera
-  smoke_test: |
-    roslaunch --files gazebo_sim_camera static_camera.launch gui:=false
+
+    '
+  smoke_test: 'roslaunch --files gazebo_sim_camera static_camera.launch gui:=false
+
     roslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false
-    roslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false
-  notes: |
-    This product owns only an independent fixed-site camera. It does not modify
+
+    roslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false
+    start_vrpn:=false
+
+    '
+  notes: 'This product owns only an independent fixed-site camera. It does not modify
+
     or depend on any FS150, Scout, UAV, or other vehicle camera model.
+
+    '
 ownership:
   paths:
   - /opt/ros/noetic/share/gazebo_sim_camera
