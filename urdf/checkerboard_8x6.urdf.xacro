@@ -4,11 +4,28 @@
   <xacro:arg name="model_name" default="intrinsic_checkerboard"/>
   <xacro:property name="s" value="0.20"/>
   <xacro:macro name="black_square" params="column row">
-    <visual>
+    <link name="checker_black_${column}_${row}">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="0.00000667" ixy="0" ixz="0"
+                 iyy="0.00000334" iyz="0" izz="0.00000334"/>
+      </inertial>
+      <visual>
+        <geometry><box size="0.004 ${s} ${s}"/></geometry>
+        <material name="black"><color rgba="0.01 0.01 0.01 1"/></material>
+      </visual>
+    </link>
+    <joint name="checker_black_${column}_${row}_joint" type="fixed">
+      <parent link="board"/>
+      <child link="checker_black_${column}_${row}"/>
       <origin xyz="-0.011 ${(-0.7 + 0.2*column)} ${(-0.5 + 0.2*row)}"/>
-      <geometry><box size="0.004 ${s} ${s}"/></geometry>
-      <material name="black"><color rgba="0.01 0.01 0.01 1"/></material>
-    </visual>
+    </joint>
+    <gazebo reference="checker_black_${column}_${row}">
+      <material>Gazebo/Black</material>
+    </gazebo>
+    <gazebo reference="checker_black_${column}_${row}_joint">
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
   </xacro:macro>
 
   <!-- Eight by six squares, i.e. seven by five internal calibration corners. -->
@@ -19,12 +36,14 @@
       <material name="white"><color rgba="0.98 0.98 0.98 1"/></material>
     </visual>
     <collision><geometry><box size="0.02 1.60 1.20"/></geometry></collision>
-    <xacro:black_square column="0" row="0"/><xacro:black_square column="2" row="0"/><xacro:black_square column="4" row="0"/><xacro:black_square column="6" row="0"/>
-    <xacro:black_square column="1" row="1"/><xacro:black_square column="3" row="1"/><xacro:black_square column="5" row="1"/><xacro:black_square column="7" row="1"/>
-    <xacro:black_square column="0" row="2"/><xacro:black_square column="2" row="2"/><xacro:black_square column="4" row="2"/><xacro:black_square column="6" row="2"/>
-    <xacro:black_square column="1" row="3"/><xacro:black_square column="3" row="3"/><xacro:black_square column="5" row="3"/><xacro:black_square column="7" row="3"/>
-    <xacro:black_square column="0" row="4"/><xacro:black_square column="2" row="4"/><xacro:black_square column="4" row="4"/><xacro:black_square column="6" row="4"/>
-    <xacro:black_square column="1" row="5"/><xacro:black_square column="3" row="5"/><xacro:black_square column="5" row="5"/><xacro:black_square column="7" row="5"/>
   </link>
+  <gazebo reference="board"><material>Gazebo/White</material></gazebo>
+
+  <xacro:black_square column="0" row="0"/><xacro:black_square column="2" row="0"/><xacro:black_square column="4" row="0"/><xacro:black_square column="6" row="0"/>
+  <xacro:black_square column="1" row="1"/><xacro:black_square column="3" row="1"/><xacro:black_square column="5" row="1"/><xacro:black_square column="7" row="1"/>
+  <xacro:black_square column="0" row="2"/><xacro:black_square column="2" row="2"/><xacro:black_square column="4" row="2"/><xacro:black_square column="6" row="2"/>
+  <xacro:black_square column="1" row="3"/><xacro:black_square column="3" row="3"/><xacro:black_square column="5" row="3"/><xacro:black_square column="7" row="3"/>
+  <xacro:black_square column="0" row="4"/><xacro:black_square column="2" row="4"/><xacro:black_square column="4" row="4"/><xacro:black_square column="6" row="4"/>
+  <xacro:black_square column="1" row="5"/><xacro:black_square column="3" row="5"/><xacro:black_square column="5" row="5"/><xacro:black_square column="7" row="5"/>
   <gazebo><static>true</static></gazebo>
 </robot>

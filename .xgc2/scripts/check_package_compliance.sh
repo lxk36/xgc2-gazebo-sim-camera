@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-/tmp/xgc2-gazebo-sim-camera-pycache}"
 bash -n .xgc2/scripts/*.sh
-python3 -m py_compile scripts/camera_contract_test.py .xgc2/scripts/xgc2_artifact_manifest.py
+python3 -m py_compile scripts/camera_contract_test.py scripts/web_calibration.py .xgc2/scripts/xgc2_artifact_manifest.py
 python3 test/static_product_contract.py
 python3 -m json.tool process-definitions/gazebo-static-camera.json >/dev/null
 
@@ -17,6 +17,7 @@ required=(
   CMakeLists.txt LICENSE README.md package.xml
   launch/static_camera.launch launch/intrinsic_calibration_world.launch
   launch/extrinsic_calibration_world.launch launch/camera_ar_rviz.launch
+  launch/web_calibration.launch web/index.html web/app.js web/style.css
   urdf/fixed_rgb_camera.urdf.xacro urdf/checkerboard_8x6.urdf.xacro
   urdf/calibration_marker.urdf.xacro config/extrinsic_markers_vrpn.yaml
   process-definitions/gazebo-static-camera.json test/static_camera_contract.test

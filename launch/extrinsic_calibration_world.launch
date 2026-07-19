@@ -8,9 +8,9 @@
   <arg name="optical_frame" default="usb_cam_optical_frame"/>
   <arg name="gt_camera_link_frame" default="usb_cam_link_gt"/>
   <arg name="gt_optical_frame" default="usb_cam_optical_frame_gt"/>
-  <arg name="width" default="1920"/>
-  <arg name="height" default="1080"/>
-  <arg name="fps" default="30.0"/>
+  <arg name="width" default="3840"/>
+  <arg name="height" default="2160"/>
+  <arg name="fps" default="15.0"/>
   <arg name="hfov" default="1.3962634"/>
   <arg name="camera_x" default="-4.0"/><arg name="camera_y" default="0.0"/><arg name="camera_z" default="1.5"/>
   <arg name="camera_roll" default="0.0"/><arg name="camera_pitch" default="0.0"/><arg name="camera_yaw" default="0.0"/>

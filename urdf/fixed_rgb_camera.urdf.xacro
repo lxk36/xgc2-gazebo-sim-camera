@@ -11,13 +11,21 @@
   <xacro:arg name="camera_namespace" default="usb_cam"/>
   <xacro:arg name="camera_link_frame" default="usb_cam_link"/>
   <xacro:arg name="optical_frame" default="usb_cam_optical_frame"/>
-  <xacro:arg name="width" default="1920"/>
-  <xacro:arg name="height" default="1080"/>
-  <xacro:arg name="fps" default="30.0"/>
+  <xacro:arg name="width" default="3840"/>
+  <xacro:arg name="height" default="2160"/>
+  <xacro:arg name="fps" default="15.0"/>
   <xacro:arg name="hfov" default="1.3962634"/>
   <xacro:arg name="near_clip" default="0.05"/>
   <xacro:arg name="far_clip" default="100.0"/>
   <xacro:arg name="noise_stddev" default="0.0"/>
+  <xacro:arg name="static" default="true"/>
+
+  <!-- Compact black camera body: x is the optical/forward axis. -->
+  <xacro:property name="body_depth" value="0.06"/>
+  <xacro:property name="body_side" value="0.14"/>
+  <xacro:property name="lens_length" value="0.035"/>
+  <xacro:property name="lens_radius" value="0.04"/>
+  <xacro:property name="lens_center_x" value="${(body_depth + lens_length) / 2.0}"/>
 
   <link name="$(arg camera_link_frame)">
     <inertial>
@@ -26,10 +34,21 @@
       <inertia ixx="0.0004" ixy="0" ixz="0" iyy="0.0004" iyz="0" izz="0.0004"/>
     </inertial>
     <visual>
-      <geometry><box size="0.12 0.18 0.10"/></geometry>
-      <material name="camera_dark"><color rgba="0.08 0.08 0.08 1"/></material>
+      <geometry><box size="${body_depth} ${body_side} ${body_side}"/></geometry>
+      <material name="camera_black"><color rgba="0.02 0.02 0.02 1"/></material>
     </visual>
-    <collision><geometry><box size="0.12 0.18 0.10"/></geometry></collision>
+    <visual>
+      <origin xyz="${lens_center_x} 0 0" rpy="0 ${pi/2} 0"/>
+      <geometry><cylinder radius="${lens_radius}" length="${lens_length}"/></geometry>
+      <material name="camera_black"/>
+    </visual>
+    <collision>
+      <geometry><box size="${body_depth} ${body_side} ${body_side}"/></geometry>
+    </collision>
+    <collision>
+      <origin xyz="${lens_center_x} 0 0" rpy="0 ${pi/2} 0"/>
+      <geometry><cylinder radius="${lens_radius}" length="${lens_length}"/></geometry>
+    </collision>
   </link>
 
   <link name="$(arg optical_frame)"/>
@@ -40,10 +59,24 @@
     <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
   </joint>
 
-  <!-- Model-level static flag: the fixed-site camera must never fall. -->
-  <gazebo><static>true</static></gazebo>
+  <!--
+    Fixed-site default (static:=true): the camera is pinned so it never falls.
+    Movable mode (static:=false, used by the calibration/teleop world): the
+    model stays in the physics engine so /gazebo/set_model_state can reposition
+    it, while per-link gravity is disabled so it floats in place instead of
+    falling.  A <static>true</static> model is excluded from physics entirely,
+    so set_model_state silently fails to move it (and the render never changes).
+  -->
+  <xacro:if value="$(arg static)">
+    <gazebo><static>true</static></gazebo>
+  </xacro:if>
+  <xacro:unless value="$(arg static)">
+    <gazebo reference="$(arg camera_link_frame)"><gravity>false</gravity></gazebo>
+  </xacro:unless>
 
   <gazebo reference="$(arg camera_link_frame)">
+    <!-- Gazebo Classic does not reliably preserve URDF RGBA colors. -->
+    <material>Gazebo/Black</material>
     <sensor name="rgb_camera" type="camera">
       <always_on>true</always_on>
       <update_rate>$(arg fps)</update_rate>

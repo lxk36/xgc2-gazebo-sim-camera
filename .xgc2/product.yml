@@ -19,6 +19,9 @@ apt:
     - amd64
     - arm64
   depends:
+  - python3-numpy
+  - python3-opencv
+  - ros-noetic-gazebo-msgs
   - ros-noetic-gazebo-plugins
   - ros-noetic-gazebo-ros
   - ros-noetic-rospy

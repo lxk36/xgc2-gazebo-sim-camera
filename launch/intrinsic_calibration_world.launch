@@ -2,25 +2,33 @@
 <launch>
   <arg name="gui" default="true"/>
   <arg name="paused" default="false"/>
+  <arg name="keyboard_teleop" default="true"/>
+  <arg name="keyboard_linear_step" default="0.15"/>
+  <arg name="keyboard_angular_step" default="0.05"/>
+  <!-- Spawn the camera movable (gravity-off, not <static>) so the keyboard
+       teleop and drive_intrinsic_calibration.py can actually reposition it. -->
+  <arg name="camera_static" default="false"/>
   <arg name="camera_namespace" default="usb_cam"/>
   <arg name="model_name" default="gazebo_static_camera"/>
   <arg name="camera_link_frame" default="usb_cam_link"/>
   <arg name="optical_frame" default="usb_cam_optical_frame"/>
-  <arg name="width" default="1920"/>
-  <arg name="height" default="1080"/>
-  <arg name="fps" default="30.0"/>
+  <arg name="width" default="3840"/>
+  <arg name="height" default="2160"/>
+  <arg name="fps" default="15.0"/>
   <arg name="hfov" default="1.3962634"/>
   <arg name="camera_x" default="-4.0"/><arg name="camera_y" default="0.0"/><arg name="camera_z" default="1.5"/>
   <arg name="camera_roll" default="0.0"/><arg name="camera_pitch" default="0.0"/><arg name="camera_yaw" default="0.0"/>
   <arg name="board_x" default="2.0"/><arg name="board_y" default="0.0"/><arg name="board_z" default="1.5"/>
   <arg name="board_roll" default="0.0"/><arg name="board_pitch" default="0.0"/><arg name="board_yaw" default="0.0"/>
 
-  <include file="$(find gazebo_sim_camera)/launch/static_camera.launch">
-    <arg name="world" value="$(find gazebo_sim_camera)/worlds/calibration.world"/>
+  <include file="$(dirname)/static_camera.launch">
+    <arg name="world" value="$(dirname)/../worlds/calibration.world"/>
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
+    <arg name="keyboard_gui" value="$(arg keyboard_teleop)"/>
     <arg name="camera_namespace" value="$(arg camera_namespace)"/>
     <arg name="model_name" value="$(arg model_name)"/>
+    <arg name="static" value="$(arg camera_static)"/>
     <arg name="camera_link_frame" value="$(arg camera_link_frame)"/>
     <arg name="optical_frame" value="$(arg optical_frame)"/>
     <arg name="width" value="$(arg width)"/><arg name="height" value="$(arg height)"/>
@@ -31,9 +39,14 @@
   </include>
 
   <param name="intrinsic_checkerboard_description"
-         command="$(find xacro)/xacro '$(find gazebo_sim_camera)/urdf/checkerboard_8x6.urdf.xacro' model_name:=intrinsic_checkerboard"/>
+         command="$(find xacro)/xacro '$(dirname)/../urdf/checkerboard_8x6.urdf.xacro' model_name:=intrinsic_checkerboard"/>
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_intrinsic_checkerboard" output="screen"
         args="-urdf -param intrinsic_checkerboard_description -model intrinsic_checkerboard
           -x $(arg board_x) -y $(arg board_y) -z $(arg board_z)
           -R $(arg board_roll) -P $(arg board_pitch) -Y $(arg board_yaw)"/>
+
+  <node if="$(arg keyboard_teleop)" pkg="gazebo_sim_camera"
+        type="keyboard_camera_teleop.py" name="gazebo_camera_keyboard_teleop"
+        output="screen" required="false"
+        args="--model-name $(arg model_name) --linear-step $(arg keyboard_linear_step) --angular-step $(arg keyboard_angular_step)"/>
 </launch>

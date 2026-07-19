@@ -54,6 +54,77 @@ ground-truth `CameraInfo`; run the normal ROS camera calibrator on the same two
 topics to exercise an intrinsic-calibration workflow. Move the board to several
 poses with `/gazebo/set_model_state` to collect geometrically diverse samples.
 
+The calibration world spawns the camera in movable mode (`static:=false`) and
+repositions it by publishing `gazebo_msgs/ModelState` on the
+`/gazebo/set_model_state` topic; the standalone `static_camera.launch` keeps
+`static:=true` so its fixed-site camera stays pinned. (A `<static>true</static>`
+model is excluded from physics, so `set_model_state` cannot move it — movable
+mode instead disables the link's gravity so the camera floats and can be
+teleported.) With the ROS Noetic `camera_calibration` GUI open for the 7 by 5
+inner-corner board, this assisted sweep moves the camera through far, near, edge
+and oblique views. It mirrors the official X/Y/Size/Skew acceptance ranges and
+restores the initial pose afterward:
+
+```bash
+rosrun gazebo_sim_camera drive_intrinsic_calibration.py \
+  --image-topic /usb_cam/image_raw --board-size 7x5
+```
+
+When all four GUI bars are green, press `CALIBRATE` and then `SAVE` in the
+official calibration window.
+
+For manual UE-style camera movement, click the Gazebo render area so it has
+keyboard focus. The intrinsic world starts the native Gazebo keyboard capture
+plugin and the Python pose controller by default:
+
+Controls follow a drone RC "Mode 2" layout:
+
+```text
+W / S          throttle up / down (altitude)
+A / D          yaw left / right
+Arrow keys     forward-back (up/down) / strafe (left/right)
+Q / E          pitch (aim up / down)
+Z / C          roll
++ / -          increase / decrease movement step
+Space          restore the launch pose
+H              show controls
+Esc            stop keyboard control
+```
+
+Set `keyboard_teleop:=false` when launching the intrinsic world to disable it.
+
+## Web calibration UI
+
+`web_calibration.py` runs the whole *move camera → collect samples → calibrate →
+commit* flow in a browser. It reuses ROS `camera_calibration`'s CV engine
+unchanged (subclassing its `CalibrationNode` and replacing only the OpenCV
+window), and moves the camera over the same `/gazebo/set_model_state` topic as
+the keyboard teleop. The backend is Python standard library only
+(`http.server` + an MJPEG stream); the frontend is dependency-free HTML/JS.
+
+Start the world without the native keyboard teleop (so the web node is the only
+authority on the camera pose), then launch the UI:
+
+```bash
+roslaunch gazebo_sim_camera intrinsic_calibration_world.launch \
+  gui:=true keyboard_teleop:=false
+roslaunch gazebo_sim_camera web_calibration.launch   # or: rosrun ... web_calibration.py
+```
+
+Open `http://localhost:8080`. The left pane is the live corner-overlaid image;
+the right pane keeps the X/Y/Size/Skew bars, the `Calibrate` / `Save` / `Commit`
+buttons, and a 3D **sample guide**: grey spheres are the poses still to capture,
+the amber-ringed one is next, green means captured, and the blue dot is the live
+camera. Below it, a reference snapshot shows roughly what that pose should look
+like (pre-record the set once with `curl -XPOST localhost:8080/record_refs`).
+Click the page and fly the camera manually with the drone Mode 2 keys (`W/S`
+throttle, `A/D` yaw, arrows forward-back/strafe, `Q/E` pitch, `Z/C` roll) until a
+sphere greens. `Commit` uploads through `/usb_cam/set_camera_info` (saved to
+`~/.ros/camera_info/usb_cam.yaml`); `Save` writes `/tmp/calibrationdata.tar.gz`.
+
+Pass `extra_args:="--no-camera-control"` to serve calibration only. Do not run
+the native keyboard teleop at the same time — both publish camera poses.
+
 ## Extrinsic scene and VRPN
 
 ```bash
