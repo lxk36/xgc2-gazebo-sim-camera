@@ -29,6 +29,8 @@ grep -q 'id: xgc2-gazebo-sim-camera' .xgc2/product.yml
 grep -Eq '^version: [0-9]+\.[0-9]+\.[0-9]+-[0-9]+$' .xgc2/product.yml
 grep -q 'PACKAGE="ros-noetic-xgc2-gazebo-sim-camera"' .xgc2/scripts/package_debs.sh
 grep -q '<name>gazebo_sim_camera</name>' package.xml
+grep -q '^  recommends:$' .xgc2/product.yml
+grep -q '^Recommends: ros-noetic-xgc2-gazebo-sim-vrpn-bridge' .xgc2/scripts/package_debs.sh
 grep -q 'id": "gazebo-static-camera"' process-definitions/gazebo-static-camera.json
 grep -q '/usr/share/xgc2/process-definitions' CMakeLists.txt
 grep -q 'PLUGIN_RELATIVE="usr/share/xgc2/process-definitions/gazebo-static-camera.json"' .xgc2/scripts/package_debs.sh

@@ -1,14 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(gazebo_sim_camera)
 
-find_package(catkin REQUIRED COMPONENTS
-  gazebo_msgs
-  gazebo_ros
-  rospy
-  sensor_msgs
-  tf
-  xacro
-)
+find_package(catkin REQUIRED)
 
 catkin_package()
 
