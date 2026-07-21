@@ -3,13 +3,15 @@
   "definitions": [
     {
       "id": "gazebo-static-camera",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "label": "Gazebo fixed-site RGB camera",
-      "description": "Starts an independent Gazebo Classic fixed-site camera with the physical-camera ROS topic contract.",
+      "description": "Adds one managed fixed-site RGB camera to the currently running Gazebo Classic scene.",
       "drivers": ["host"],
       "parameters": {
         "properties": {
           "rosMasterUri": {"type": "string", "default": "http://127.0.0.1:11311"},
+          "gazeboMasterPort": {"type": "integer", "default": 11345, "minimum": 1, "maximum": 65535},
+          "startGazebo": {"type": "boolean", "default": false},
           "cameraNamespace": {"type": "string", "default": "usb_cam"},
           "modelName": {"type": "string", "default": "gazebo_static_camera"},
           "cameraLinkFrame": {"type": "string", "default": "usb_cam_link"},
@@ -32,10 +34,24 @@
         },
         "additionalProperties": false
       },
+      "resourceClaims": [
+        {
+          "bindingKey": "gazebo-model",
+          "kind": "custom",
+          "mode": "",
+          "capacity": 0,
+          "namespace": "gazebo-model",
+          "identityParts": [
+            {"parameter": "gazeboMasterPort"},
+            {"parameter": "modelName"}
+          ]
+        }
+      ],
       "command": {
         "executable": "/opt/ros/noetic/bin/roslaunch",
         "args": [
           "gazebo_sim_camera", "static_camera.launch",
+          "start_gazebo:=${startGazebo}",
           "camera_namespace:=${cameraNamespace}", "model_name:=${modelName}",
           "camera_link_frame:=${cameraLinkFrame}", "optical_frame:=${opticalFrame}",
           "gt_camera_link_frame:=${gtCameraLinkFrame}", "gt_optical_frame:=${gtOpticalFrame}",
@@ -44,6 +60,7 @@
           "mode:=${mode}", "publish_truth_tf:=${publishTruthTf}", "gui:=${gui}"
         ],
         "env": {
+          "GAZEBO_MASTER_URI": "http://127.0.0.1:${gazeboMasterPort}",
           "ROS_MASTER_URI": "${rosMasterUri}",
           "PATH": "/opt/ros/noetic/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
           "PYTHONPATH": "/opt/ros/noetic/lib/python3/dist-packages",
@@ -51,6 +68,34 @@
           "ROS_PACKAGE_PATH": "/opt/ros/noetic/share"
         },
         "directExecutable": true
+      },
+      "beforeStart": {
+        "command": {
+          "executable": "/opt/ros/noetic/bin/rosservice",
+          "args": ["call", "/gazebo/delete_model", "model_name: '${modelName}'"],
+          "directExecutable": true,
+          "env": {
+            "GAZEBO_MASTER_URI": "http://127.0.0.1:${gazeboMasterPort}",
+            "ROS_MASTER_URI": "${rosMasterUri}",
+            "PATH": "/opt/ros/noetic/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PYTHONPATH": "/opt/ros/noetic/lib/python3/dist-packages"
+          }
+        },
+        "timeout": 5000000000
+      },
+      "beforeStop": {
+        "command": {
+          "executable": "/opt/ros/noetic/bin/rosservice",
+          "args": ["call", "/gazebo/delete_model", "model_name: '${modelName}'"],
+          "directExecutable": true,
+          "env": {
+            "GAZEBO_MASTER_URI": "http://127.0.0.1:${gazeboMasterPort}",
+            "ROS_MASTER_URI": "${rosMasterUri}",
+            "PATH": "/opt/ros/noetic/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PYTHONPATH": "/opt/ros/noetic/lib/python3/dist-packages"
+          }
+        },
+        "timeout": 5000000000
       },
       "readiness": {
         "kind": "exec",
