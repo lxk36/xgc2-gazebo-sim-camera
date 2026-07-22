@@ -8,8 +8,15 @@ xacro = (root / "urdf/fixed_rgb_camera.urdf.xacro").read_text(encoding="utf-8")
 launch = (root / "launch/static_camera.launch").read_text(encoding="utf-8")
 extrinsic = (root / "launch/extrinsic_calibration_world.launch").read_text(encoding="utf-8")
 rviz = (root / "rviz/camera_ar.rviz").read_text(encoding="utf-8")
+keepalive = (root / "scripts/camera_lifecycle_keepalive.py").read_text(encoding="utf-8")
+cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
 definition = json.loads(
     (root / "process-definitions/gazebo-static-camera.json").read_text(encoding="utf-8")
+)["definitions"][0]
+archived_definition = json.loads(
+    (root / "process-definitions/gazebo-static-camera-0.4.0.json").read_text(
+        encoding="utf-8"
+    )
 )["definitions"][0]
 
 assert "<gazebo><static>true</static></gazebo>" in xacro  # static:=true default
@@ -37,7 +44,13 @@ assert "<material>Gazebo/Black</material>" in xacro
 assert "arg('mode') == 'truth'" in launch
 assert "arg('mode') == 'validation'" in launch
 assert "gt_camera_link_frame" in launch and "gt_optical_frame" in launch
-assert "arg('mode') == 'calibration'" not in launch  # calibration deliberately publishes no TF group
+assert launch.count("arg('mode') == 'calibration'") == 1
+assert "arg('mode') == 'calibration' or not arg('publish_truth_tf')" in launch
+assert 'type="camera_lifecycle_keepalive.py"' in launch
+assert 'name="$(arg model_name)_lifecycle_keepalive"' in launch
+assert "rospy.init_node(\"camera_lifecycle_keepalive\")" in keepalive
+assert "rospy.spin()" in keepalive
+assert "scripts/camera_lifecycle_keepalive.py" in cmake
 
 assert '<arg name="vrpn_use_server_time" default="false"/>' in extrinsic
 assert '<arg name="use_server_time" value="$(arg vrpn_use_server_time)"/>' in extrinsic
@@ -55,7 +68,10 @@ assert 'type="keyboard_camera_teleop.py"' in (
 # package's own compliance, not here.
 
 mode_values = definition["parameters"]["properties"]["mode"]["enum"]
-assert definition["version"] == "0.4.0"
+assert definition["version"] == "0.5.0"
+assert archived_definition["version"] == "0.4.0"
+assert archived_definition["parameters"] == definition["parameters"]
+assert archived_definition["command"] == definition["command"]
 assert mode_values == ["truth", "calibration", "validation"]
 assert definition["parameters"]["properties"]["startGazebo"]["default"] is False
 assert definition["parameters"]["properties"]["cameraStatic"]["default"] is True

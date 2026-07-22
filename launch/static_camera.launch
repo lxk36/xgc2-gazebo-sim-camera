@@ -69,6 +69,14 @@
         args="-urdf -param $(arg model_name)_description -model $(arg model_name)
           -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
 
+  <!-- spawn_model exits after insertion. Keep roslaunch alive whenever this
+       launch has no TF publisher, so XGC can supervise and stop the managed
+       camera process for the lifetime of the experiment. -->
+  <node if="$(eval arg('mode') == 'calibration' or not arg('publish_truth_tf'))"
+        pkg="gazebo_sim_camera" type="camera_lifecycle_keepalive.py"
+        name="$(arg model_name)_lifecycle_keepalive" output="screen"
+        required="true"/>
+
   <group if="$(eval arg('mode') == 'truth' and arg('publish_truth_tf'))">
     <node pkg="tf" type="static_transform_publisher" name="$(arg model_name)_truth_pose"
           args="$(arg x) $(arg y) $(arg z) $(arg yaw) $(arg pitch) $(arg roll)

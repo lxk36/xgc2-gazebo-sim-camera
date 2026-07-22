@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-/tmp/xgc2-gazebo-sim-camera-pycache}"
 bash -n .xgc2/scripts/*.sh
-python3 -m py_compile scripts/camera_contract_test.py scripts/web_calibration.py .xgc2/scripts/xgc2_artifact_manifest.py
+python3 -m py_compile scripts/camera_lifecycle_keepalive.py scripts/camera_contract_test.py scripts/web_calibration.py .xgc2/scripts/xgc2_artifact_manifest.py
 python3 test/static_product_contract.py
 python3 -m json.tool process-definitions/gazebo-static-camera.json >/dev/null
 
@@ -18,17 +18,23 @@ required=(
   launch/static_camera.launch launch/intrinsic_calibration_world.launch
   launch/extrinsic_calibration_world.launch launch/camera_ar_rviz.launch
   launch/web_calibration.launch web/index.html web/app.js web/style.css
+  scripts/camera_lifecycle_keepalive.py
   urdf/fixed_rgb_camera.urdf.xacro config/extrinsic_markers_vrpn.yaml
   models/usb_cam/model.config models/usb_cam/model.sdf
-  process-definitions/gazebo-static-camera.json test/static_camera_contract.test
+  process-definitions/gazebo-static-camera.json
+  process-definitions/gazebo-static-camera-0.4.0.json
+  test/static_camera_contract.test
   test/static_product_contract.py
 )
 for path in "${required[@]}"; do test -f "${path}" || { echo "Missing ${path}" >&2; exit 1; }; done
 
 grep -q 'id: xgc2-gazebo-sim-camera' .xgc2/product.yml
 grep -Eq '^version: [0-9]+\.[0-9]+\.[0-9]+-[0-9]+$' .xgc2/product.yml
+grep -q '^version: 0.1.0-6$' .xgc2/product.yml
+grep -q '^    focal: 0.1.0-6$' .xgc2/product.yml
 grep -q 'PACKAGE="ros-noetic-xgc2-gazebo-sim-camera"' .xgc2/scripts/package_debs.sh
 grep -q '<name>gazebo_sim_camera</name>' package.xml
+grep -q '<exec_depend>rospy</exec_depend>' package.xml
 grep -q '^  recommends:$' .xgc2/product.yml
 grep -q '^Recommends: ros-noetic-xgc2-gazebo-sim-vrpn-bridge' .xgc2/scripts/package_debs.sh
 grep -q 'id": "gazebo-static-camera"' process-definitions/gazebo-static-camera.json

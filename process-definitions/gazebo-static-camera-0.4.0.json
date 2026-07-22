@@ -3,7 +3,7 @@
   "definitions": [
     {
       "id": "gazebo-static-camera",
-      "version": "0.5.0",
+      "version": "0.4.0",
       "label": "Gazebo fixed-site RGB camera",
       "description": "Adds one managed fixed-site RGB camera to the currently running Gazebo Classic scene.",
       "drivers": ["host"],

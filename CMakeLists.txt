@@ -6,6 +6,7 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 catkin_install_python(PROGRAMS
+  scripts/camera_lifecycle_keepalive.py
   scripts/camera_contract_test.py
   scripts/drive_intrinsic_calibration.py
   scripts/keyboard_camera_teleop.py
