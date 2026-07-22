@@ -55,9 +55,12 @@ assert 'type="keyboard_camera_teleop.py"' in (
 # package's own compliance, not here.
 
 mode_values = definition["parameters"]["properties"]["mode"]["enum"]
+assert definition["version"] == "0.4.0"
 assert mode_values == ["truth", "calibration", "validation"]
 assert definition["parameters"]["properties"]["startGazebo"]["default"] is False
+assert definition["parameters"]["properties"]["cameraStatic"]["default"] is True
 assert "start_gazebo:=${startGazebo}" in definition["command"]["args"]
+assert "static:=${cameraStatic}" in definition["command"]["args"]
 assert definition["beforeStart"]["command"]["args"][1] == "/gazebo/delete_model"
 assert definition["beforeStop"]["command"]["args"][1] == "/gazebo/delete_model"
 assert definition["resourceClaims"][0]["namespace"] == "gazebo-model"

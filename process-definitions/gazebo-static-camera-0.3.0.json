@@ -3,7 +3,7 @@
   "definitions": [
     {
       "id": "gazebo-static-camera",
-      "version": "0.4.0",
+      "version": "0.3.0",
       "label": "Gazebo fixed-site RGB camera",
       "description": "Adds one managed fixed-site RGB camera to the currently running Gazebo Classic scene.",
       "drivers": ["host"],
@@ -12,7 +12,6 @@
           "rosMasterUri": {"type": "string", "default": "http://127.0.0.1:11311"},
           "gazeboMasterPort": {"type": "integer", "default": 11345, "minimum": 1, "maximum": 65535},
           "startGazebo": {"type": "boolean", "default": false},
-          "cameraStatic": {"type": "boolean", "default": true},
           "cameraNamespace": {"type": "string", "default": "usb_cam"},
           "modelName": {"type": "string", "default": "gazebo_static_camera"},
           "cameraLinkFrame": {"type": "string", "default": "usb_cam_link"},
@@ -53,7 +52,6 @@
         "args": [
           "gazebo_sim_camera", "static_camera.launch",
           "start_gazebo:=${startGazebo}",
-          "static:=${cameraStatic}",
           "camera_namespace:=${cameraNamespace}", "model_name:=${modelName}",
           "camera_link_frame:=${cameraLinkFrame}", "optical_frame:=${opticalFrame}",
           "gt_camera_link_frame:=${gtCameraLinkFrame}", "gt_optical_frame:=${gtOpticalFrame}",
