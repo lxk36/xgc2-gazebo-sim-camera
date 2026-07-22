@@ -168,4 +168,7 @@ The Debian package installs the ProcessDefinition plugin at the canonical
 `/usr/share/xgc2/process-definitions/gazebo-static-camera.json` path (and keeps
 a package-share copy for ROS tooling). Configure
 `/usr/share/xgc2/process-definitions` in `XGC_PROCESS_DEFINITION_PLUGINS` for
-XGC Core discovery alongside the physical camera definition.
+XGC Core discovery alongside the physical camera definition. Process version
+0.4 exposes `cameraStatic` (default `true`); the managed intrinsic-calibration
+workflow sets it to `false` so Gazebo camera-control actions can reposition the
+model.
