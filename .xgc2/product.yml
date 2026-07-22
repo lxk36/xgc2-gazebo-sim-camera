@@ -61,11 +61,11 @@ ownership:
   - /usr/share/xgc2/process-definitions/gazebo-static-camera.json
 release:
   requires:
-  - xgc2-gazebo-sim-worlds
+  - xgc2-gazebo-sim-scenes
   - xgc2-gazebo-sim-vrpn-bridge
   dependency_policy:
     xgc2-gazebo-sim-vrpn-bridge: verify
-    xgc2-gazebo-sim-worlds: verify
+    xgc2-gazebo-sim-scenes: verify
   repository: lxk36/xgc2-gazebo-sim-camera
   ref: main
   workflow: release.yml
