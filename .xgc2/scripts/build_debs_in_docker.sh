@@ -28,14 +28,43 @@ docker run --rm \
   -v "${OUTPUT_DIR}:/workspace/out" \
   "${DOCKER_IMAGE}" bash -lc '
     set -euo pipefail
-    apt-get update
-    apt-get install -y --no-install-recommends ca-certificates
+
+    sed -i \
+      -e "s#http://archive.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g" \
+      -e "s#http://security.ubuntu.com/ubuntu#https://archive.ubuntu.com/ubuntu#g" \
+      -e "s#http://ports.ubuntu.com/ubuntu-ports#https://ports.ubuntu.com/ubuntu-ports#g" \
+      /etc/apt/sources.list
+    printf "%s\n" "Acquire::Retries \"5\";" \
+      >/etc/apt/apt.conf.d/99-xgc2-retries
+    apt_update() {
+      local attempt
+      for attempt in 1 2 3; do
+        if apt-get update; then
+          return 0
+        fi
+        [[ "${attempt}" -lt 3 ]] || return 1
+        sleep "$((attempt * 5))"
+      done
+    }
+    apt_install() {
+      local attempt
+      for attempt in 1 2 3; do
+        if apt-get install "$@"; then
+          return 0
+        fi
+        [[ "${attempt}" -lt 3 ]] || return 1
+        sleep "$((attempt * 5))"
+        apt_update
+      done
+    }
+    apt_update
+    apt_install -y --no-install-recommends ca-certificates
     echo "deb [trusted=yes arch=$(dpkg --print-architecture)] https://xgc2.apt.xiaokang.ink focal main" >/etc/apt/sources.list.d/xgc2.list
     if [[ -n "${XGC2_APT_OVERLAY_URL:-}" ]]; then
       sed "s#https://xgc2.apt.xiaokang.ink#${XGC2_APT_OVERLAY_URL%/}#g" /etc/apt/sources.list.d/xgc2.list >/etc/apt/sources.list.d/00-xgc2-release-train.list
     fi
-    apt-get update
-    apt-get install -y --no-install-recommends \
+    apt_update
+    apt_install -y --no-install-recommends \
       build-essential cmake dpkg-dev fakeroot git rsync libxml2-utils xauth xvfb \
       ros-noetic-gazebo-plugins ros-noetic-gazebo-ros ros-noetic-rostest \
       ros-noetic-rospack ros-noetic-rospy ros-noetic-roslaunch ros-noetic-rostopic ros-noetic-rviz \
@@ -53,7 +82,7 @@ docker run --rm \
     DESTDIR=/workspace/work/install-root catkin_make install -DCMAKE_INSTALL_PREFIX=/opt/ros/noetic -DCATKIN_ENABLE_TESTING=OFF
     /workspace/repo/.xgc2/scripts/package_debs.sh --install-root /workspace/work/install-root --output-dir /workspace/out
     if [[ "${INSTALL_CHECK}" == true ]]; then
-      apt-get install -y /workspace/out/ros-noetic-xgc2-gazebo-sim-camera_*.deb
+      apt_install -y /workspace/out/ros-noetic-xgc2-gazebo-sim-camera_*.deb
       /workspace/repo/.xgc2/scripts/check_installed_packages.sh
     fi
   '
