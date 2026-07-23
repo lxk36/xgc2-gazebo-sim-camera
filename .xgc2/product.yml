@@ -1,10 +1,10 @@
 schema: xgc2.product.v1
 id: xgc2-gazebo-sim-camera
 name: XGC2 Gazebo Sim Camera
-version: 0.1.0-11
+version: 0.1.0-12
 kind: ros1-apt
-summary: Independent fixed-site RGB camera, calibration targets, and RViz AR scene
-  for Gazebo Classic 11.
+summary: Profile-driven GPU-rendered H264 world camera and calibration scenes for
+  Gazebo Classic 11.
 ros:
   distro: noetic
   packages:
@@ -22,6 +22,7 @@ apt:
   depends:
   - python3-numpy
   - python3-opencv
+  - python3-yaml
   - ros-noetic-gazebo-msgs
   - ros-noetic-gazebo-plugins
   - ros-noetic-gazebo-ros
@@ -71,4 +72,4 @@ release:
   workflow: release.yml
   ci_workflow: ci.yml
   apt_versions:
-    focal: 0.1.0-11
+    focal: 0.1.0-8

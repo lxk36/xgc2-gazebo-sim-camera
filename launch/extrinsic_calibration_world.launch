@@ -2,16 +2,25 @@
 <launch>
   <arg name="paused" default="false"/>
   <arg name="gui" default="true"/>
-  <arg name="camera_namespace" default="usb_cam"/>
   <arg name="model_name" default="gazebo_static_camera"/>
   <arg name="camera_link_frame" default="usb_cam_link"/>
   <arg name="optical_frame" default="usb_cam_optical_frame"/>
   <arg name="gt_camera_link_frame" default="usb_cam_link_gt"/>
   <arg name="gt_optical_frame" default="usb_cam_optical_frame_gt"/>
-  <arg name="width" default="3840"/>
-  <arg name="height" default="2160"/>
-  <arg name="fps" default="15.0"/>
-  <arg name="hfov" default="1.3962634"/>
+  <arg name="camera_profile" default="world_ultrawide_4k30_140"/>
+  <arg name="camera_profiles_file"
+       default="$(find gazebo_sim_camera)/config/world_camera_profiles.yaml"/>
+  <arg name="width" default="profile"/>
+  <arg name="height" default="profile"/>
+  <arg name="fps" default="profile"/>
+  <arg name="hfov" default="profile"/>
+  <arg name="media_source_id" default="usb_cam"/>
+  <arg name="media_rtp_port" default="5004"/>
+  <arg name="media_control_socket" default="/tmp/xgc2/media/usb_cam.sock"/>
+  <arg name="media_bitrate" default="profile"/>
+  <arg name="media_max_bitrate" default="profile"/>
+  <arg name="media_pacing_bitrate" default="profile"/>
+  <arg name="media_vbv_buffer_milliseconds" default="profile"/>
   <arg name="camera_x" default="-4.0"/><arg name="camera_y" default="0.0"/><arg name="camera_z" default="1.5"/>
   <arg name="camera_roll" default="0.0"/><arg name="camera_pitch" default="0.0"/><arg name="camera_yaw" default="0.0"/>
   <arg name="mode" default="truth"/>
@@ -22,18 +31,26 @@
        with image_raw. VRPN server wall time is intentionally not propagated. -->
   <arg name="vrpn_use_server_time" default="false"/>
 
-  <include file="$(find gazebo_sim_camera)/launch/static_camera.launch">
+  <include file="$(dirname)/static_camera.launch">
     <arg name="world" value="$(find gazebo_sim_worlds)/worlds/camera_calibration_extrinsic/camera_calibration_extrinsic.world"/>
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
-    <arg name="camera_namespace" value="$(arg camera_namespace)"/>
     <arg name="model_name" value="$(arg model_name)"/>
     <arg name="camera_link_frame" value="$(arg camera_link_frame)"/>
     <arg name="optical_frame" value="$(arg optical_frame)"/>
     <arg name="gt_camera_link_frame" value="$(arg gt_camera_link_frame)"/>
     <arg name="gt_optical_frame" value="$(arg gt_optical_frame)"/>
+    <arg name="camera_profile" value="$(arg camera_profile)"/>
+    <arg name="camera_profiles_file" value="$(arg camera_profiles_file)"/>
     <arg name="width" value="$(arg width)"/><arg name="height" value="$(arg height)"/>
     <arg name="fps" value="$(arg fps)"/><arg name="hfov" value="$(arg hfov)"/>
+    <arg name="media_source_id" value="$(arg media_source_id)"/>
+    <arg name="media_rtp_port" value="$(arg media_rtp_port)"/>
+    <arg name="media_control_socket" value="$(arg media_control_socket)"/>
+    <arg name="media_bitrate" value="$(arg media_bitrate)"/>
+    <arg name="media_max_bitrate" value="$(arg media_max_bitrate)"/>
+    <arg name="media_pacing_bitrate" value="$(arg media_pacing_bitrate)"/>
+    <arg name="media_vbv_buffer_milliseconds" value="$(arg media_vbv_buffer_milliseconds)"/>
     <arg name="x" value="$(arg camera_x)"/><arg name="y" value="$(arg camera_y)"/><arg name="z" value="$(arg camera_z)"/>
     <arg name="roll" value="$(arg camera_roll)"/><arg name="pitch" value="$(arg camera_pitch)"/><arg name="yaw" value="$(arg camera_yaw)"/>
     <arg name="mode" value="$(arg mode)"/>

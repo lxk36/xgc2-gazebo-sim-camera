@@ -1,96 +1,139 @@
 #!/usr/bin/env python3
+import errno
+import json
 import math
-import threading
+import socket
 import time
 import unittest
 
 import rospy
 import tf
-from sensor_msgs.msg import CameraInfo, Image
+
+
+def receive_line(connection, maximum_bytes=65536):
+    buffer = bytearray()
+    while b"\n" not in buffer:
+        chunk = connection.recv(65536)
+        if not chunk:
+            raise RuntimeError("camera control socket closed before its response header")
+        buffer.extend(chunk)
+        if len(buffer) > maximum_bytes:
+            raise RuntimeError("camera control response header is too large")
+    line, remainder = bytes(buffer).split(b"\n", 1)
+    return line, remainder
+
+
+def receive_exact(connection, size, initial=b""):
+    buffer = bytearray(initial)
+    while len(buffer) < size:
+        chunk = connection.recv(min(65536, size - len(buffer)))
+        if not chunk:
+            raise RuntimeError(
+                "camera control socket closed with {} of {} payload bytes".format(
+                    len(buffer), size
+                )
+            )
+        buffer.extend(chunk)
+    if len(buffer) != size:
+        raise RuntimeError("camera control response contains unexpected trailing bytes")
+    return bytes(buffer)
 
 
 class CameraContractTest(unittest.TestCase):
-    def wait_for_camera_pair(self, image_topic, info_topic, timeout):
-        condition = threading.Condition()
-        images = {}
-        infos = {}
-        matched = [None]
-
-        def trim(messages):
-            while len(messages) > 64:
-                messages.pop(next(iter(messages)))
-
-        def on_image(message):
-            key = message.header.stamp.to_nsec()
-            with condition:
-                images[key] = message
-                trim(images)
-                if key in infos:
-                    matched[0] = (message, infos[key])
-                    condition.notify_all()
-
-        def on_info(message):
-            key = message.header.stamp.to_nsec()
-            with condition:
-                infos[key] = message
-                trim(infos)
-                if key in images:
-                    matched[0] = (images[key], message)
-                    condition.notify_all()
-
-        image_subscriber = rospy.Subscriber(
-            image_topic, Image, on_image, queue_size=30, buff_size=2**24
-        )
-        info_subscriber = rospy.Subscriber(info_topic, CameraInfo, on_info, queue_size=30)
+    def connect_to_camera(self, path, timeout):
         deadline = time.monotonic() + timeout
+        last_error = None
+        while time.monotonic() < deadline and not rospy.is_shutdown():
+            connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                connection.connect(path)
+                connection.settimeout(15.0)
+                return connection
+            except OSError as error:
+                connection.close()
+                last_error = error
+                if error.errno not in (errno.ENOENT, errno.ECONNREFUSED):
+                    raise
+                time.sleep(0.1)
+        self.fail(
+            "camera control socket {} did not become ready: {}".format(
+                path, last_error
+            )
+        )
+
+    def request_snapshot(self, path):
+        connection = self.connect_to_camera(path, timeout=45.0)
         try:
-            with condition:
-                while matched[0] is None:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0.0:
-                        self.fail(
-                            "no Image/CameraInfo pair with an identical stamp arrived within {:.1f}s".format(
-                                timeout
-                            )
-                        )
-                    condition.wait(remaining)
-            return matched[0]
+            request = {
+                "operation": "snapshot",
+                "snapshotId": "static-camera-contract",
+            }
+            connection.sendall(json.dumps(request).encode("utf-8") + b"\n")
+            encoded_header, payload_prefix = receive_line(connection)
+            header = json.loads(encoded_header.decode("utf-8"))
+            if not header.get("ok"):
+                self.fail("camera snapshot failed: {}".format(header.get("error")))
+            jpeg_size = int(header["jpegBytes"])
+            rgb_size = int(header["rgbBytes"])
+            payload = receive_exact(
+                connection,
+                jpeg_size + rgb_size,
+                initial=payload_prefix,
+            )
+            return header, payload[:jpeg_size], payload[jpeg_size:]
         finally:
-            image_subscriber.unregister()
-            info_subscriber.unregister()
+            connection.close()
 
     def test_camera_contract(self):
-        image_topic = rospy.get_param("~image_topic", "/usb_cam/image_raw")
-        info_topic = rospy.get_param("~camera_info_topic", "/usb_cam/camera_info")
-        frame_id = rospy.get_param("~frame_id", "usb_cam_optical_frame")
+        control_socket = rospy.get_param(
+            "~control_socket", "/tmp/xgc2/media/contract_camera.sock"
+        )
+        frame_id = rospy.get_param("~frame_id", "contract_camera_optical_frame")
         parent_frame = rospy.get_param("~parent_frame", "map")
-        width = int(rospy.get_param("~width", 320))
-        height = int(rospy.get_param("~height", 240))
-        hfov = float(rospy.get_param("~hfov", 1.0471975512))
+        width = int(rospy.get_param("~width", 1280))
+        height = int(rospy.get_param("~height", 720))
+        hfov = float(rospy.get_param("~hfov", 1.3962634015954636))
 
-        image, info = self.wait_for_camera_pair(image_topic, info_topic, timeout=45.0)
+        header, jpeg, rgb = self.request_snapshot(control_socket)
+        self.assertEqual(header["snapshotId"], "static-camera-contract")
+        self.assertEqual(header["frameId"], frame_id)
+        self.assertEqual((header["width"], header["height"]), (width, height))
+        self.assertEqual(header["pixelFormat"], "rgb8")
+        self.assertGreaterEqual(header["timestampNanoseconds"], 0)
+        self.assertEqual(len(rgb), width * height * 3)
+        self.assertGreater(len(jpeg), 4)
+        self.assertEqual(jpeg[:2], b"\xff\xd8")
+        self.assertEqual(jpeg[-2:], b"\xff\xd9")
 
-        self.assertEqual((image.width, image.height), (width, height))
-        self.assertEqual((info.width, info.height), (width, height))
-        self.assertEqual(image.header.frame_id, frame_id)
-        self.assertEqual(info.header.frame_id, frame_id)
-        self.assertFalse(image.header.stamp.is_zero())
-        self.assertEqual(image.header.stamp, info.header.stamp)
-        self.assertGreater(len(image.data), 0)
-        self.assertEqual(len(info.K), 9)
+        camera_matrix = header["cameraMatrix"]
+        self.assertEqual(len(camera_matrix), 9)
         expected_fx = width / (2.0 * math.tan(hfov / 2.0))
-        self.assertAlmostEqual(info.K[0], expected_fx, delta=max(2.0, expected_fx * 0.03))
-        self.assertAlmostEqual(info.K[8], 1.0, places=6)
+        self.assertAlmostEqual(
+            camera_matrix[0],
+            expected_fx,
+            delta=max(2.0, expected_fx * 0.03),
+        )
+        self.assertAlmostEqual(camera_matrix[4], expected_fx, delta=max(2.0, expected_fx * 0.03))
+        self.assertAlmostEqual(camera_matrix[8], 1.0, places=6)
+        self.assertEqual(header["distortion"], [0.0] * 5)
 
         listener = tf.TransformListener()
-        listener.waitForTransform(parent_frame, frame_id, rospy.Time(0), rospy.Duration(20.0))
-        translation, rotation = listener.lookupTransform(parent_frame, frame_id, rospy.Time(0))
+        listener.waitForTransform(
+            parent_frame, frame_id, rospy.Time(0), rospy.Duration(20.0)
+        )
+        translation, rotation = listener.lookupTransform(
+            parent_frame, frame_id, rospy.Time(0)
+        )
         self.assertEqual(len(translation), 3)
-        self.assertAlmostEqual(sum(value * value for value in rotation), 1.0, delta=1.0e-4)
+        self.assertAlmostEqual(
+            sum(value * value for value in rotation), 1.0, delta=1.0e-4
+        )
 
 
 if __name__ == "__main__":
     import rostest
 
     rospy.init_node("gazebo_sim_camera_contract_test")
-    rostest.rosrun("gazebo_sim_camera", "camera_contract", CameraContractTest)
+    rostest.rosrun(
+        "gazebo_sim_camera", "camera_contract", CameraContractTest
+    )

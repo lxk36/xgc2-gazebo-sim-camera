@@ -2,87 +2,157 @@
 import json
 from pathlib import Path
 
+import yaml
+
 
 root = Path(__file__).resolve().parents[1]
 xacro = (root / "urdf/fixed_rgb_camera.urdf.xacro").read_text(encoding="utf-8")
 launch = (root / "launch/static_camera.launch").read_text(encoding="utf-8")
-extrinsic = (root / "launch/extrinsic_calibration_world.launch").read_text(encoding="utf-8")
-rviz = (root / "rviz/camera_ar.rviz").read_text(encoding="utf-8")
-keepalive = (root / "scripts/camera_lifecycle_keepalive.py").read_text(encoding="utf-8")
+intrinsic = (root / "launch/intrinsic_calibration_world.launch").read_text(
+    encoding="utf-8"
+)
+extrinsic = (root / "launch/extrinsic_calibration_world.launch").read_text(
+    encoding="utf-8"
+)
+keepalive = (root / "scripts/camera_lifecycle_keepalive.py").read_text(
+    encoding="utf-8"
+)
 cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
+profiles = yaml.safe_load(
+    (root / "config/world_camera_profiles.yaml").read_text(encoding="utf-8")
+)
 definition = json.loads(
-    (root / "process-definitions/gazebo-static-camera.json").read_text(encoding="utf-8")
+    (root / "process-definitions/gazebo-static-camera.json").read_text(
+        encoding="utf-8"
+    )
 )["definitions"][0]
 archived_definition = json.loads(
     (root / "process-definitions/gazebo-static-camera-0.4.0.json").read_text(
         encoding="utf-8"
     )
 )["definitions"][0]
+profile_predecessor = json.loads(
+    (root / "process-definitions/gazebo-static-camera-0.6.0.json").read_text(
+        encoding="utf-8"
+    )
+)["definitions"][0]
 
-assert "<gazebo><static>true</static></gazebo>" in xacro  # static:=true default
-# static:=false spawns a movable camera: it stays in physics (no <static>) but
-# floats via disabled gravity so /gazebo/set_model_state can reposition it.
+assert profiles["schema_version"] == 1
+assert profiles["default_profile"] == "world_ultrawide_4k30_140"
+assert list(profiles["profiles"]) == [
+    "world_ultrawide_4k30_140",
+    "calibration_standard_720p20",
+]
+
+assert "<gazebo><static>true</static></gazebo>" in xacro
 assert '<xacro:arg name="static" default="true"/>' in xacro
 assert "<gravity>false</gravity>" in xacro
+assert "xacro.load_yaml(xacro.arg('camera_profiles_file'))" in xacro
+assert "radians(float(profile_lens['horizontal_fov_degrees']))" in xacro
+assert 'filename="libxgc_gazebo_media_camera.so"' in xacro
+assert "<sourceId>$(arg media_source_id)</sourceId>" in xacro
+assert "<rtpPort>$(arg media_rtp_port)</rtpPort>" in xacro
+assert "<controlSocket>$(arg media_control_socket)</controlSocket>" in xacro
+assert "libgazebo_ros_camera.so" not in xacro
+
+assert 'name="camera_profile" default="world_ultrawide_4k30_140"' in launch
+assert "config/world_camera_profiles.yaml" in launch
+for argument in (
+    "width",
+    "height",
+    "fps",
+    "hfov",
+    "near_clip",
+    "far_clip",
+    "noise_stddev",
+    "media_bitrate",
+    "media_max_bitrate",
+    "media_pacing_bitrate",
+    "media_vbv_buffer_milliseconds",
+    "snapshot_jpeg_quality",
+):
+    assert f'<arg name="{argument}" default="profile"/>' in launch
+assert "camera_profile:=$(arg camera_profile)" in launch
+assert "camera_profiles_file:=$(arg camera_profiles_file)" in launch
 assert "static:=$(arg static)" in launch
-assert '<arg name="static" value="$(arg camera_static)"/>' in (
-    root / "launch/intrinsic_calibration_world.launch"
-).read_text(encoding="utf-8")
-assert "<robotNamespace>/</robotNamespace>" in xacro
-assert "<cameraName>$(arg camera_namespace)</cameraName>" in xacro
-assert "<imageTopicName>image_raw</imageTopicName>" in xacro
-assert "<cameraInfoTopicName>camera_info</cameraInfoTopicName>" in xacro
-assert "$(arg optical_frame)" in xacro
-assert '<xacro:property name="body_depth" value="0.06"/>' in xacro
-assert '<xacro:property name="body_side" value="0.14"/>' in xacro
-assert '<xacro:property name="lens_length" value="0.035"/>' in xacro
-assert '<xacro:property name="lens_radius" value="0.04"/>' in xacro
-assert xacro.count("<geometry><cylinder") == 2  # matching lens visual and collision
-assert '<material name="camera_black"><color rgba="0.02 0.02 0.02 1"/></material>' in xacro
-assert "<material>Gazebo/Black</material>" in xacro
+
+for calibration_launch in (intrinsic, extrinsic):
+    assert 'name="camera_profile" default="world_ultrawide_4k30_140"' in calibration_launch
+    assert '<arg name="camera_profile" value="$(arg camera_profile)"/>' in calibration_launch
+    assert '<arg name="camera_profiles_file" value="$(arg camera_profiles_file)"/>' in calibration_launch
+
+assert '<arg name="static" value="$(arg camera_static)"/>' in intrinsic
+assert "--gui-client-plugin libKeyboardGUIPlugin.so" in launch
+assert 'type="keyboard_camera_teleop.py"' in intrinsic
 
 assert "arg('mode') == 'truth'" in launch
 assert "arg('mode') == 'validation'" in launch
 assert "gt_camera_link_frame" in launch and "gt_optical_frame" in launch
-assert launch.count("arg('mode') == 'calibration'") == 1
 assert "arg('mode') == 'calibration' or not arg('publish_truth_tf')" in launch
 assert 'type="camera_lifecycle_keepalive.py"' in launch
 assert 'name="$(arg model_name)_lifecycle_keepalive"' in launch
-assert "rospy.init_node(\"camera_lifecycle_keepalive\")" in keepalive
+assert 'rospy.init_node("camera_lifecycle_keepalive")' in keepalive
 assert "rospy.spin()" in keepalive
 assert "scripts/camera_lifecycle_keepalive.py" in cmake
 
 assert '<arg name="vrpn_use_server_time" default="false"/>' in extrinsic
 assert '<arg name="use_server_time" value="$(arg vrpn_use_server_time)"/>' in extrinsic
-for marker in range(1, 7):
-    assert f"/vrpn_client_node/cal_marker_{marker:02d}/pose" in rviz
-assert "Image Topic: /usb_cam/image_raw" in rviz
-assert "--gui-client-plugin libKeyboardGUIPlugin.so" in launch
-assert 'type="keyboard_camera_teleop.py"' in (
-    root / "launch/intrinsic_calibration_world.launch"
-).read_text(encoding="utf-8")
 
-# The calibration checkerboard and markers are now shared model:// assets in the
-# gazebo_sim_worlds package (models/checkerboard_8x6, models/cal_marker_*, and the
-# camera_calibration_{intrinsic,extrinsic} worlds); they are validated by that
-# package's own compliance, not here.
-
-mode_values = definition["parameters"]["properties"]["mode"]["enum"]
-assert definition["version"] == "0.5.0"
+properties = definition["parameters"]["properties"]
+profile_property = properties["cameraProfile"]
+assert definition["version"] == "0.7.0"
 assert archived_definition["version"] == "0.4.0"
-assert archived_definition["parameters"] == definition["parameters"]
-assert archived_definition["command"] == definition["command"]
-assert mode_values == ["truth", "calibration", "validation"]
-assert definition["parameters"]["properties"]["startGazebo"]["default"] is False
-assert definition["parameters"]["properties"]["cameraStatic"]["default"] is True
-assert "start_gazebo:=${startGazebo}" in definition["command"]["args"]
-assert "static:=${cameraStatic}" in definition["command"]["args"]
+assert profile_predecessor["version"] == "0.6.0"
+assert profile_predecessor["parameters"]["properties"]["width"]["default"] == 3840
+assert profile_predecessor["parameters"]["properties"]["height"]["default"] == 2160
+assert profile_predecessor["parameters"]["properties"]["fps"]["default"] == 30.0
+assert profile_predecessor["parameters"]["properties"]["hfov"]["default"] == 2.44346095
+assert "width:=${width}" in profile_predecessor["command"]["args"]
+assert "media_bitrate:=${mediaBitrate}" in profile_predecessor["command"]["args"]
+assert profile_property["default"] == profiles["default_profile"]
+assert profile_property["enum"] == list(profiles["profiles"])
+assert definition["parameters"]["additionalProperties"] is False
+for removed_fragment in (
+    "width",
+    "height",
+    "fps",
+    "hfov",
+    "mediaBitrate",
+    "mediaMaxBitrate",
+    "mediaPacingBitrate",
+    "mediaVbvBufferMilliseconds",
+    "snapshotJpegQuality",
+):
+    assert removed_fragment not in properties
+for instance_property in (
+    "modelName",
+    "cameraLinkFrame",
+    "opticalFrame",
+    "mediaSourceId",
+    "mediaRtpPort",
+    "mediaControlSocket",
+    "x",
+    "y",
+    "z",
+    "roll",
+    "pitch",
+    "yaw",
+):
+    assert instance_property in properties
+
+command_arguments = definition["command"]["args"]
+assert "camera_profile:=${cameraProfile}" in command_arguments
+assert "media_source_id:=${mediaSourceId}" in command_arguments
+assert "media_rtp_port:=${mediaRtpPort}" in command_arguments
+assert "media_control_socket:=${mediaControlSocket}" in command_arguments
+assert not any(argument.startswith("width:=") for argument in command_arguments)
+assert not any(argument.startswith("media_bitrate:=") for argument in command_arguments)
 assert definition["beforeStart"]["command"]["args"][1] == "/gazebo/delete_model"
 assert definition["beforeStop"]["command"]["args"][1] == "/gazebo/delete_model"
 assert definition["resourceClaims"][0]["namespace"] == "gazebo-model"
 probe = definition["readiness"]
 assert probe["kind"] == "exec"
-assert probe["command"]["executable"] == "/opt/ros/noetic/bin/rostopic"
-assert "/${cameraNamespace}/image_raw/header/stamp" in probe["command"]["args"]
+assert probe["command"]["executable"] == "/usr/bin/test"
+assert probe["command"]["args"] == ["-S", "${mediaControlSocket}"]
 
 print("Static product contracts passed")

@@ -65,7 +65,7 @@ docker run --rm \
     fi
     apt_update
     apt_install -y --no-install-recommends \
-      build-essential cmake dpkg-dev fakeroot git rsync libxml2-utils xauth xvfb \
+      build-essential cmake dpkg-dev fakeroot git python3-yaml rsync libxml2-utils xauth xvfb \
       ros-noetic-gazebo-plugins ros-noetic-gazebo-ros ros-noetic-rostest \
       ros-noetic-rospack ros-noetic-rospy ros-noetic-roslaunch ros-noetic-rostopic ros-noetic-rviz \
       ros-noetic-sensor-msgs ros-noetic-tf ros-noetic-xacro \

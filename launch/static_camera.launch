@@ -7,20 +7,39 @@
   <arg name="start_gazebo" default="true"/>
   <arg name="world" default="$(find gazebo_sim_worlds)/worlds/empty/empty.world"/>
 
-  <arg name="camera_namespace" default="usb_cam"/>
   <arg name="model_name" default="gazebo_static_camera"/>
   <arg name="camera_link_frame" default="usb_cam_link"/>
   <arg name="optical_frame" default="usb_cam_optical_frame"/>
+  <arg name="camera_profile" default="world_ultrawide_4k30_140"/>
+  <arg name="camera_profiles_file"
+       default="$(find gazebo_sim_camera)/config/world_camera_profiles.yaml"/>
+  <arg name="media_source_id" default="usb_cam"/>
+  <arg name="media_rtp_host" default="127.0.0.1"/>
+  <arg name="media_rtp_port" default="5004"/>
+  <arg name="media_control_socket" default="/tmp/xgc2/media/usb_cam.sock"/>
+  <!--
+    The encoder has three deliberately separate budgets:
+      * average bitrate: sustainable link budget;
+      * max bitrate / VBV: bits an IDR may borrow without visibly collapsing;
+      * pacing bitrate: short RTP burst ceiling, so one IDR cannot overflow
+        the loopback receiver or block the Gazebo render callback.
+    Keep media_bitrate <= media_max_bitrate <= media_pacing_bitrate.
+  -->
+  <arg name="media_bitrate" default="profile"/>
+  <arg name="media_max_bitrate" default="profile"/>
+  <arg name="media_pacing_bitrate" default="profile"/>
+  <arg name="media_vbv_buffer_milliseconds" default="profile"/>
+  <arg name="snapshot_jpeg_quality" default="profile"/>
   <arg name="gt_camera_link_frame" default="usb_cam_link_gt"/>
   <arg name="gt_optical_frame" default="usb_cam_optical_frame_gt"/>
   <arg name="parent_frame" default="map"/>
-  <arg name="width" default="3840"/>
-  <arg name="height" default="2160"/>
-  <arg name="fps" default="15.0"/>
-  <arg name="hfov" default="1.3962634"/>
-  <arg name="near_clip" default="0.05"/>
-  <arg name="far_clip" default="100.0"/>
-  <arg name="noise_stddev" default="0.0"/>
+  <arg name="width" default="profile"/>
+  <arg name="height" default="profile"/>
+  <arg name="fps" default="profile"/>
+  <arg name="hfov" default="profile"/>
+  <arg name="near_clip" default="profile"/>
+  <arg name="far_clip" default="profile"/>
+  <arg name="noise_stddev" default="profile"/>
   <!-- static:=true pins the fixed-site camera (default product behavior).
        static:=false keeps it in physics with gravity off so it floats and can
        be repositioned via the /gazebo/set_model_state topic. -->
@@ -58,12 +77,19 @@
   <param name="$(arg model_name)_description"
          command="$(find xacro)/xacro '$(dirname)/../urdf/fixed_rgb_camera.urdf.xacro'
            model_name:=$(arg model_name)
-           camera_namespace:=$(arg camera_namespace)
            camera_link_frame:=$(arg camera_link_frame)
            optical_frame:=$(arg optical_frame)
+           camera_profile:=$(arg camera_profile)
+           camera_profiles_file:=$(arg camera_profiles_file)
            width:=$(arg width) height:=$(arg height) fps:=$(arg fps) hfov:=$(arg hfov)
            near_clip:=$(arg near_clip) far_clip:=$(arg far_clip) noise_stddev:=$(arg noise_stddev)
-           static:=$(arg static)"/>
+           static:=$(arg static)
+           media_source_id:=$(arg media_source_id) media_rtp_host:=$(arg media_rtp_host)
+           media_rtp_port:=$(arg media_rtp_port) media_control_socket:=$(arg media_control_socket)
+           media_bitrate:=$(arg media_bitrate) media_max_bitrate:=$(arg media_max_bitrate)
+           media_pacing_bitrate:=$(arg media_pacing_bitrate)
+           media_vbv_buffer_milliseconds:=$(arg media_vbv_buffer_milliseconds)
+           snapshot_jpeg_quality:=$(arg snapshot_jpeg_quality)"/>
 
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg model_name)" output="screen"
         args="-urdf -param $(arg model_name)_description -model $(arg model_name)

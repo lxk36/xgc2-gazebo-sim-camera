@@ -8,17 +8,67 @@
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="gazebo_static_camera">
   <xacro:arg name="model_name" default="gazebo_static_camera"/>
-  <xacro:arg name="camera_namespace" default="usb_cam"/>
   <xacro:arg name="camera_link_frame" default="usb_cam_link"/>
   <xacro:arg name="optical_frame" default="usb_cam_optical_frame"/>
-  <xacro:arg name="width" default="3840"/>
-  <xacro:arg name="height" default="2160"/>
-  <xacro:arg name="fps" default="15.0"/>
-  <xacro:arg name="hfov" default="1.3962634"/>
-  <xacro:arg name="near_clip" default="0.05"/>
-  <xacro:arg name="far_clip" default="100.0"/>
-  <xacro:arg name="noise_stddev" default="0.0"/>
+  <xacro:arg name="camera_profile" default="world_ultrawide_4k30_140"/>
+  <xacro:arg name="camera_profiles_file" default="../config/world_camera_profiles.yaml"/>
+  <xacro:arg name="media_source_id" default="usb_cam"/>
+  <xacro:arg name="media_rtp_host" default="127.0.0.1"/>
+  <xacro:arg name="media_rtp_port" default="5004"/>
+  <xacro:arg name="media_control_socket" default="/tmp/xgc2/media/usb_cam.sock"/>
+  <!--
+    "profile" means use the selected atomic parameter group. These legacy
+    launch overrides remain available for direct roslaunch callers and tests,
+    but the managed ProcessDefinition intentionally exposes only a profile.
+  -->
+  <xacro:arg name="media_bitrate" default="profile"/>
+  <xacro:arg name="media_max_bitrate" default="profile"/>
+  <xacro:arg name="media_pacing_bitrate" default="profile"/>
+  <xacro:arg name="media_vbv_buffer_milliseconds" default="profile"/>
+  <xacro:arg name="snapshot_jpeg_quality" default="profile"/>
+  <xacro:arg name="width" default="profile"/>
+  <xacro:arg name="height" default="profile"/>
+  <xacro:arg name="fps" default="profile"/>
+  <xacro:arg name="hfov" default="profile"/>
+  <xacro:arg name="near_clip" default="profile"/>
+  <xacro:arg name="far_clip" default="profile"/>
+  <xacro:arg name="noise_stddev" default="profile"/>
   <xacro:arg name="static" default="true"/>
+
+  <xacro:property name="profile_document"
+                  value="${xacro.load_yaml(xacro.arg('camera_profiles_file'))}"/>
+  <xacro:property name="profile_name" value="${xacro.arg('camera_profile')}"/>
+  <xacro:property name="profile"
+                  value="${profile_document['profiles'][profile_name]}"/>
+  <xacro:property name="profile_image" value="${profile['image']}"/>
+  <xacro:property name="profile_lens" value="${profile['lens']}"/>
+  <xacro:property name="profile_encoder" value="${profile['encoder']}"/>
+  <xacro:property name="profile_snapshot" value="${profile['snapshot']}"/>
+
+  <xacro:property name="camera_width"
+                  value="${int(profile_image['width_px']) if xacro.arg('width') == 'profile' else int(xacro.arg('width'))}"/>
+  <xacro:property name="camera_height"
+                  value="${int(profile_image['height_px']) if xacro.arg('height') == 'profile' else int(xacro.arg('height'))}"/>
+  <xacro:property name="camera_fps"
+                  value="${float(profile_image['frame_rate_hz']) if xacro.arg('fps') == 'profile' else float(xacro.arg('fps'))}"/>
+  <xacro:property name="camera_hfov"
+                  value="${radians(float(profile_lens['horizontal_fov_degrees'])) if xacro.arg('hfov') == 'profile' else float(xacro.arg('hfov'))}"/>
+  <xacro:property name="camera_near_clip"
+                  value="${float(profile_lens['near_clip_m']) if xacro.arg('near_clip') == 'profile' else float(xacro.arg('near_clip'))}"/>
+  <xacro:property name="camera_far_clip"
+                  value="${float(profile_lens['far_clip_m']) if xacro.arg('far_clip') == 'profile' else float(xacro.arg('far_clip'))}"/>
+  <xacro:property name="camera_noise_stddev"
+                  value="${float(profile_lens['gaussian_noise_stddev']) if xacro.arg('noise_stddev') == 'profile' else float(xacro.arg('noise_stddev'))}"/>
+  <xacro:property name="camera_media_bitrate"
+                  value="${int(profile_encoder['average_bitrate_bps']) if xacro.arg('media_bitrate') == 'profile' else int(xacro.arg('media_bitrate'))}"/>
+  <xacro:property name="camera_media_max_bitrate"
+                  value="${int(profile_encoder['maximum_bitrate_bps']) if xacro.arg('media_max_bitrate') == 'profile' else int(xacro.arg('media_max_bitrate'))}"/>
+  <xacro:property name="camera_media_pacing_bitrate"
+                  value="${int(profile_encoder['pacing_bitrate_bps']) if xacro.arg('media_pacing_bitrate') == 'profile' else int(xacro.arg('media_pacing_bitrate'))}"/>
+  <xacro:property name="camera_media_vbv_buffer_milliseconds"
+                  value="${int(profile_encoder['vbv_buffer_ms']) if xacro.arg('media_vbv_buffer_milliseconds') == 'profile' else int(xacro.arg('media_vbv_buffer_milliseconds'))}"/>
+  <xacro:property name="camera_snapshot_jpeg_quality"
+                  value="${int(profile_snapshot['jpeg_quality']) if xacro.arg('snapshot_jpeg_quality') == 'profile' else int(xacro.arg('snapshot_jpeg_quality'))}"/>
 
   <!-- Compact black camera body: x is the optical/forward axis. -->
   <xacro:property name="body_depth" value="0.06"/>
@@ -79,36 +129,29 @@
     <material>Gazebo/Black</material>
     <sensor name="rgb_camera" type="camera">
       <always_on>true</always_on>
-      <update_rate>$(arg fps)</update_rate>
+      <update_rate>${camera_fps}</update_rate>
       <visualize>false</visualize>
       <camera>
-        <horizontal_fov>$(arg hfov)</horizontal_fov>
+        <horizontal_fov>${camera_hfov}</horizontal_fov>
         <image>
-          <width>$(arg width)</width>
-          <height>$(arg height)</height>
+          <width>${camera_width}</width>
+          <height>${camera_height}</height>
           <format>R8G8B8</format>
         </image>
-        <clip><near>$(arg near_clip)</near><far>$(arg far_clip)</far></clip>
-        <noise><type>gaussian</type><mean>0.0</mean><stddev>$(arg noise_stddev)</stddev></noise>
+        <clip><near>${camera_near_clip}</near><far>${camera_far_clip}</far></clip>
+        <noise><type>gaussian</type><mean>0.0</mean><stddev>${camera_noise_stddev}</stddev></noise>
       </camera>
-      <plugin name="gazebo_ros_rgb_camera" filename="libgazebo_ros_camera.so">
-        <!--
-          gazebo_ros_camera prefixes its image topics with cameraName inside
-          robotNamespace.  Put the plugin at the ROS root and use cameraName as
-          the single namespace component; otherwise usb_cam is duplicated as
-          /usb_cam/usb_cam/image_raw.
-        -->
-        <robotNamespace>/</robotNamespace>
-        <cameraName>$(arg camera_namespace)</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>$(arg optical_frame)</frameName>
-        <updateRate>$(arg fps)</updateRate>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
+      <plugin name="xgc_media_camera" filename="libxgc_gazebo_media_camera.so">
+        <sourceId>$(arg media_source_id)</sourceId>
+        <frameId>$(arg optical_frame)</frameId>
+        <rtpHost>$(arg media_rtp_host)</rtpHost>
+        <rtpPort>$(arg media_rtp_port)</rtpPort>
+        <controlSocket>$(arg media_control_socket)</controlSocket>
+        <bitrate>${camera_media_bitrate}</bitrate>
+        <maxBitrate>${camera_media_max_bitrate}</maxBitrate>
+        <pacingBitrate>${camera_media_pacing_bitrate}</pacingBitrate>
+        <vbvBufferMilliseconds>${camera_media_vbv_buffer_milliseconds}</vbvBufferMilliseconds>
+        <jpegQuality>${camera_snapshot_jpeg_quality}</jpegQuality>
       </plugin>
     </sensor>
   </gazebo>
