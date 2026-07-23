@@ -72,4 +72,4 @@ release:
   workflow: release.yml
   ci_workflow: ci.yml
   apt_versions:
-    focal: 0.1.0-8
+    focal: 0.1.0-12
